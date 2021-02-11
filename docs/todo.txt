@@ -1,0 +1,5 @@
+    - Add instructions
+    - Add serialisation for MidasVM Code
+    - Add network communication
+    - Add command line options for Host and Participant mode
+    - Create communication model (OpenCL-esque system)
