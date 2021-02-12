@@ -1,5 +1,5 @@
     - Add instructions
     - Add serialisation for MidasVM Code
-    - Add network communication
-    - Add command line options for Host and Participant mode
     - Create communication model (OpenCL-esque system)
+    - Create a parser/lexer to convert source code into a serialised MyCode object
+    - Make a MyCode struct, a serialisable wrapper for Code

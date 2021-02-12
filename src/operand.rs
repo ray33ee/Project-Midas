@@ -9,17 +9,18 @@ use std::ops::Div;
 use std::ops::Rem;
 
 use std::cmp::Ordering;
+use serde::{Serialize, Deserialize};
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Operand {
     I64(i64),
     F64(f64)
 }
 
 pub enum OperandPair {
-    I642(i64, i64),
-    F642(f64, f64)
+    I64(i64, i64),
+    F64(f64, f64)
 }
 
 impl Operand {
@@ -44,20 +45,20 @@ impl Operand {
             Operand::I64(num1) => {
                 match rhs {
                     Operand::I64(num2) => {
-                        OperandPair::I642(*num1, *num2)
+                        OperandPair::I64(*num1, *num2)
                     },
                     Operand::F64(num2) => {
-                        OperandPair::F642(*num1 as f64, *num2)
+                        OperandPair::F64(*num1 as f64, *num2)
                     }
                 }
             },
             Operand::F64(num1) => {
                 match rhs {
                     Operand::I64(num2) => {
-                        OperandPair::F642(*num1, *num2 as f64)
+                        OperandPair::F64(*num1, *num2 as f64)
                     },
                     Operand::F64(num2) => {
-                        OperandPair::F642(*num1, *num2)
+                        OperandPair::F64(*num1, *num2)
                     }
                 }
             }
@@ -72,10 +73,10 @@ impl Add for Operand {
         let pair = self.pair(&other);
 
         match pair {
-            OperandPair::I642(a, b) => {
+            OperandPair::I64(a, b) => {
                 Operand::I64(a + b)
             },
-            OperandPair::F642(a, b) => {
+            OperandPair::F64(a, b) => {
                 Operand::F64(a + b)
             }
         }
@@ -89,10 +90,10 @@ impl Mul for Operand {
         let pair = self.pair(&other);
 
         match pair {
-            OperandPair::I642(a, b) => {
+            OperandPair::I64(a, b) => {
                 Operand::I64(a * b)
             },
-            OperandPair::F642(a, b) => {
+            OperandPair::F64(a, b) => {
                 Operand::F64(a * b)
             }
         }
@@ -106,10 +107,10 @@ impl Sub for Operand {
         let pair = self.pair(&other);
 
         match pair {
-            OperandPair::I642(a, b) => {
+            OperandPair::I64(a, b) => {
                 Operand::I64(a - b)
             },
-            OperandPair:: F642(a, b) => {
+            OperandPair::F64(a, b) => {
                 Operand::F64(a - b)
             }
         }
@@ -123,10 +124,10 @@ impl Div for Operand {
         let pair = self.pair(&other);
 
         match pair {
-            OperandPair::I642(a, b) => {
+            OperandPair::I64(a, b) => {
                 Operand::I64(a / b)
             },
-            OperandPair::F642(a, b) => {
+            OperandPair::F64(a, b) => {
                 Operand::F64(a / b)
             }
         }
@@ -140,10 +141,10 @@ impl Rem for Operand {
         let pair = self.pair(&other);
 
         match pair {
-            OperandPair::I642(a, b) => {
+            OperandPair::I64(a, b) => {
                 Operand::I64(a % b)
             },
-            OperandPair::F642(a, b) => {
+            OperandPair::F64(a, b) => {
                 Operand::F64(a % b)
             }
         }
@@ -155,10 +156,10 @@ impl PartialOrd for Operand {
         let pair = self.pair(&other);
 
         match pair {
-            OperandPair::I642(a, b) => {
+            OperandPair::I64(a, b) => {
                 a.partial_cmp(&b)
             },
-            OperandPair::F642(a, b) => {
+            OperandPair::F64(a, b) => {
                 a.partial_cmp(&b)
             }
         }
@@ -170,10 +171,10 @@ impl PartialEq for Operand {
         let pair = self.pair(&other);
 
         match pair {
-            OperandPair::I642(a, b) => {
+            OperandPair::I64(a, b) => {
                 a == b
             },
-            OperandPair::F642(a, b) => {
+            OperandPair::F64(a, b) => {
                 a == b
             }
         }

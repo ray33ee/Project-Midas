@@ -1,6 +1,48 @@
-use stack_vm::{InstructionTable, Instruction, Machine};
+use stack_vm::{InstructionTable, Instruction, Machine, Code, Builder};
 
 use crate::operand::Operand;
+
+
+
+use serde::{Serialize, Deserialize};
+use std::convert::From;
+use std::convert::Into;
+use stack_vm::WriteOnceTable;
+
+
+//A struct identical to the Builder struct, except it doesnt have the instruction_table field and is serde serialisable
+#[derive(Serialize, Deserialize)]
+pub struct SerdeCode<T> {
+    symbols: Vec<(usize, String)>,
+    code: Vec<usize>,
+    data: Vec<T>,
+    labels: Vec<(usize, String)>
+}
+
+impl<'a, T: PartialEq + std::fmt::Debug> From<Builder<'a, T>> for SerdeCode<T> {
+    fn from(item: Builder<'a, T>) -> Self {
+        let code = Code::from(item);
+
+
+        SerdeCode {
+            symbols: code.symbols,
+            code: code.code,
+            data: code.data,
+            labels: code.labels
+        }
+    }
+}
+
+impl<T> Into<Code<T>> for SerdeCode<T> {
+    fn into(self) -> Code<T> {
+        Code {
+            symbols: self.symbols,
+            code: self.code,
+            data: self.data,
+            labels: self.labels
+        }
+    }
+}
 
 pub fn get_instructions() -> InstructionTable<Operand> {
     let mut instruction_table = InstructionTable::new();
@@ -20,9 +62,11 @@ pub fn get_instructions() -> InstructionTable<Operand> {
     instruction_table.insert(Instruction::new(13, "inc", 0, inc));
     instruction_table.insert(Instruction::new(14, "dec", 0, dec));
     instruction_table.insert(Instruction::new(15, "copy", 0, copy));
-    instruction_table.insert(Instruction::new(1, "pushc", 1, push_c));
+    instruction_table.insert(Instruction::new(16, "pushc", 1, push_c));
     instruction_table
 }
+
+
 
 /* Data Transfer */
 
@@ -163,3 +207,7 @@ fn print_s(machine: &mut Machine<Operand>, _args: &[usize]) {
 
     println!("Top: {:?} (ip: {})", top, machine.ip);
 }
+
+/* Communication */
+
+//Send, receive and Check

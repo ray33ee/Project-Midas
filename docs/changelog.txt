@@ -1,2 +1,8 @@
+Version 0.1.1
+    - Added very simple client-server network connection
+    - Added various modules for network host, participant, common code(messages.rs) and compiler option
+    - StackVM code is now serializable
+    - Host or participant mode now selected via command line arg
+
 Version 0.1.0
     - Initial commit
