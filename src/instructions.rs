@@ -7,11 +7,10 @@ use crate::operand::Operand;
 use serde::{Serialize, Deserialize};
 use std::convert::From;
 use std::convert::Into;
-use stack_vm::WriteOnceTable;
 
 
 //A struct identical to the Builder struct, except it doesnt have the instruction_table field and is serde serialisable
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SerdeCode<T> {
     symbols: Vec<(usize, String)>,
     code: Vec<usize>,
@@ -44,7 +43,10 @@ impl<T> Into<Code<T>> for SerdeCode<T> {
     }
 }
 
-pub fn get_instructions() -> InstructionTable<Operand> {
+pub type SerdeCodeOperand = SerdeCode<Operand>;
+pub type Instructions = InstructionTable<Operand>;
+
+pub fn get_instructions() -> Instructions {
     let mut instruction_table = InstructionTable::new();
     instruction_table.insert(Instruction::new(0, "pushl", 1, push_l));
     instruction_table.insert(Instruction::new(1, "pushv", 1, push_v));
@@ -128,7 +130,7 @@ pub fn mov_v(machine: &mut Machine<Operand>, args: &[usize]) {
     }
 }
 
-pub fn copy(machine: &mut Machine<Operand>, args: &[usize]) {
+pub fn copy(machine: &mut Machine<Operand>, _args: &[usize]) {
     let top = machine.operand_stack.peek().clone();
     machine.operand_push(top);
 }
@@ -211,3 +213,7 @@ fn print_s(machine: &mut Machine<Operand>, _args: &[usize]) {
 /* Communication */
 
 //Send, receive and Check
+
+//Check: Checks the event queue for comms from the host. POssible commands include:
+    //Stop: This can be achieved by jumping to a label at the end of the VM. Or calling 'ret' until the VM stops
+    //Pause: Block the VM until

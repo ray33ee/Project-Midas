@@ -1,5 +1,3 @@
     - Add instructions
-    - Add serialisation for MidasVM Code
     - Create communication model (OpenCL-esque system)
     - Create a parser/lexer to convert source code into a serialised MyCode object
-    - Make a MyCode struct, a serialisable wrapper for Code

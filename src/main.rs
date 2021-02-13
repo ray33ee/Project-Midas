@@ -6,12 +6,12 @@ mod messages;
 
 extern crate clap;
 
-use clap::{Arg, App, SubCommand};
+use clap::{Arg, App};
 
 fn main() {
 
     let matches = App::new("Midas")
-        .version("0.1.1")
+        .version("0.1.2")
         .author("Will Cooper")
         .about("Distributed network based paralell computing system")
         .arg(Arg::with_name("mode")
@@ -19,25 +19,20 @@ fn main() {
             .long("mode")
             .takes_value(true)
             .help("Either host, participant or compile")
-            .validator( |s|
-                if s == "host" || s == "participant" || s == "compile" {
-                    Ok(())
-                }
-                else {
-                    Err(String::from("Must be either 'host', 'participant' or 'compile'"))
-                }
-            )
+            .possible_values(&["host", "participant", "compile"])
             .required(true))
         .get_matches();
 
     match matches.value_of("mode").unwrap() {
         "host" => {
-            let host = host::Host::new();
-            host.run();
+            let mut host = host::Host::new();
+            loop {
+                host.check_events();
+            }
         },
         "participant" => {
-            let participant = participant::Participant::new();
-            participant.run();
+            let mut participant = participant::Participant::new();
+            participant.check_events();
         },
         "compile" => println!("Compile mode"),
         _ => unreachable!()

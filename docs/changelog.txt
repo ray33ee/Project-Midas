@@ -1,3 +1,11 @@
+Version 0.1.2
+    - Can now send code from host to participant
+    - Modified code in Host and Participant structs to setup in new() and check in check_events
+    - Participant and Host now check network for the various types of messages outlined in Message enum
+    - Cleared various warnings
+    - -mode argument now validated with possible_values function instead of custom validator
+    - Participant to Host Vectors now include an i64, used to identify if needed
+
 Version 0.1.1
     - Added very simple client-server network connection
     - Added various modules for network host, participant, common code(messages.rs) and compiler option

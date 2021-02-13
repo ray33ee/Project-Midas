@@ -3,7 +3,7 @@ use crate::instructions::SerdeCode;
 use crate::operand::Operand;
 use serde::{Serialize, Deserialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum Message {
     /* Host to participant */
 
@@ -17,6 +17,9 @@ pub enum Message {
 
     /* Participant to Host */
 
-    VectorI64PTH(Vec<i64>),
-    VectorF64PTH(Vec<f64>)
+    VectorI64PTH(Vec<i64>, i64),
+    VectorF64PTH(Vec<f64>, i64),
+
+    Register,
+    Unregister
 }
