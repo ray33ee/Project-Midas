@@ -1,6 +1,6 @@
 
 
-
+use std::convert::Into;
 
 use std::ops::Add;
 use std::ops::Mul;
@@ -62,6 +62,15 @@ impl Operand {
                     }
                 }
             }
+        }
+    }
+}
+
+impl Into<f64> for Operand {
+    fn into(self) -> f64 {
+        match self {
+            Operand::I64(integer) => integer as f64,
+            Operand::F64(float) => float
         }
     }
 }

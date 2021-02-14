@@ -33,8 +33,6 @@ impl Host {
 
         let mut network = Network::new(move |net_event| network_sender.send(Event::Network(net_event)));
 
-        //let server_address = "127.0.0.1:3000";
-
         match network.listen(Transport::Tcp, server_address) {
             Ok(_) => println!("TCP Server running at {}", server_address),
             Err(_) => panic!("Can not listening at {}", server_address)
@@ -55,8 +53,8 @@ impl Host {
 
         let table = get_instructions();
         let mut builder = stack_vm::Builder::new(&table);
-        builder.push("movc", vec![Operand::I64(0), Operand::I64(4)]);
-        builder.push("pushv", vec![Operand::I64(0)]);
+        builder.push("movl", vec![Operand::I64(0), Operand::I64(1)]);
+        builder.push("pushdv", vec![Operand::I64(0)]);
 
 
         self.event_queue.sender().send(Event::SendCode(endpoint, SerdeCodeOperand::from(builder)));

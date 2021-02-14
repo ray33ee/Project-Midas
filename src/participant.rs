@@ -65,25 +65,20 @@ impl Participant {
             Event::Network(net_event) => match net_event {
                 NetEvent::Message(_, message) => {
 
-                    println!("Message got");
-
                     match message {
                         Message::Code(code) => {
 
                             let mut machine = Machine::new(code.into(), &self.constants, &self.instructions);
 
-                            //machine.set_local("0", Operand::I64(55));
-
-                            //Push data sent from host onto the local variables in the VM
-
+                            //Copy any data onto the machine pseudo heap
                             for (i, operand) in self.data.iter().enumerate() {
                                 machine.set_local(&format!("d_{}", i.to_string()), *operand);
                             }
 
                             machine.run();
 
+                            //Make a copy of what is left on the operand stack and send it to host
                             let data_to_send_to_host = machine.operand_stack.as_slice().to_vec();
-
 
                             self.network.send(self.host_endpoint, Message::VectorPTH(data_to_send_to_host));
 

@@ -1,3 +1,10 @@
+Version 0.1.4
+    - Logical numbering of opcodes grouping similar instructions together and leaving gaps for future codes
+    - Now we use SocketAddrV4 to validate IP addresses (with port number)
+    - Added hash map for constants (to be used by compiler)
+    - Added conversion from Operand to f64 (for use in f64 functions)
+    - Sample source code for MidasVM has now been added to outline what source code will look like
+
 Version 0.1.3
     - Simple address command line option for both host and participant
     - We now work with Vec<Operand> instead of two different vectors

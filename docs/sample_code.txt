@@ -1,0 +1,28 @@
+//This example code takes three numbers as its heap input from the host.
+//One number to test for primality, and two other numbers indicating the range.
+//For example if the three numbers are 156, 100, 150
+//Then the algorithm will test to see if 156 is divisible by any number in 100..150
+
+    mov $suspect [0]
+    mov $divisor [1]
+    mov $upper [2]
+
+start:
+    push $suspect       #
+    push $divisor       #
+    div                 # Divide the suspected prime by the next divisor
+    jz finished         # If it divides, end the search
+    push $divisor
+    inc                 # Increment the $divisor variable
+    copy                # Copy the value, one for assignmtne one for comparison
+    pop $divisor
+    push $upper
+    eq                  # If we still have numbers to search, go to beginning
+    jnz start
+
+    mov $divisor 0      # Moving 0 into the divisor (and eventually the stack) means no divisors were found
+
+finished:
+    push $divisor       #
+
+stop:

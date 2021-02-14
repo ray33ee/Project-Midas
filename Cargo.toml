@@ -1,6 +1,6 @@
 [package]
 name = "midas"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["ray33ee <30669752+ray33ee@users.noreply.github.com>"]
 edition = "2018"
 
@@ -12,3 +12,4 @@ message-io = "0.6.0"
 stack-vm = "1.0.1"
 serde = "1.0.1"
 clap = "2.33.3"
+ipaddress = "0.1.1"
