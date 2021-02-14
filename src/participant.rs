@@ -1,5 +1,5 @@
 use crate::messages::Message;
-use crate::instructions::{get_instructions, Instructions};
+use crate::instructions::{get_instructions, Instructions, get_constants};
 use crate::operand::Operand;
 
 use message_io::network::Endpoint;
@@ -19,12 +19,14 @@ pub struct Participant {
     network: Network,
 
     instructions: Instructions,
-    constants: WriteManyTable<Operand>
+    constants: WriteManyTable<Operand>,
+
+    data: Vec<Operand>
 }
 
 impl Participant {
 
-    pub fn new() -> Self {
+    pub fn new(server_address: &str) -> Self {
 
         let mut event_queue = EventQueue::new();
 
@@ -32,7 +34,7 @@ impl Participant {
 
         let mut network = Network::new(move |net_event| network_sender.send(Event::Network(net_event)));
 
-        let server_address = "127.0.0.1:3000";
+        let constants = get_constants();
 
         if let Ok(host_endpoint) = network.connect(Transport::Tcp, server_address) {
             println!("Connect to server by TCP at {}", server_address);
@@ -45,7 +47,8 @@ impl Participant {
                 event_queue,
                 network,
                 instructions: get_instructions(),
-                constants: WriteManyTable::new()
+                constants,
+                data: Vec::new()
             }
         }
         else {
@@ -58,12 +61,9 @@ impl Participant {
 
     pub fn check_events(& mut self) {
 
-
-
-
         match self.event_queue.receive() {
             Event::Network(net_event) => match net_event {
-                NetEvent::Message(endpoint, message) => {
+                NetEvent::Message(_, message) => {
 
                     println!("Message got");
 
@@ -71,14 +71,26 @@ impl Participant {
                         Message::Code(code) => {
 
                             let mut machine = Machine::new(code.into(), &self.constants, &self.instructions);
+
+                            //machine.set_local("0", Operand::I64(55));
+
+                            //Push data sent from host onto the local variables in the VM
+
+                            for (i, operand) in self.data.iter().enumerate() {
+                                machine.set_local(&format!("d_{}", i.to_string()), *operand);
+                            }
+
                             machine.run();
 
-                        },
-                        Message::VectorI64HTP(data) => {
+                            let data_to_send_to_host = machine.operand_stack.as_slice().to_vec();
+
+
+                            self.network.send(self.host_endpoint, Message::VectorPTH(data_to_send_to_host));
+
 
                         },
-                        Message::VectorF64HTP(data) => {
-
+                        Message::VectorHTP(data) => {
+                            self.data = data;
                         },
                         _ => { panic!("Invalid message {:?}", message); }
                     }

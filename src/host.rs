@@ -9,11 +9,12 @@ use message_io::events::{EventQueue};
 use message_io::network::{Network, NetEvent, Transport};
 use crate::instructions::get_instructions;
 
+use crate::operand::Operand;
+
 enum Event {
     Network(NetEvent<Message>),
     SendCode(Endpoint, SerdeCodeOperand),
-    SendI64(Endpoint, Vec<i64>),
-    SendF649(Endpoint, Vec<f64>)
+    SendData(Endpoint, Vec<Operand>),
 }
 
 pub struct Host {
@@ -24,7 +25,7 @@ pub struct Host {
 
 impl Host {
 
-    pub fn new() -> Self {
+    pub fn new(server_address: &str) -> Self {
 
         let mut event_queue = EventQueue::new();
 
@@ -32,7 +33,7 @@ impl Host {
 
         let mut network = Network::new(move |net_event| network_sender.send(Event::Network(net_event)));
 
-        let server_address = "127.0.0.1:3000";
+        //let server_address = "127.0.0.1:3000";
 
         match network.listen(Transport::Tcp, server_address) {
             Ok(_) => println!("TCP Server running at {}", server_address),
@@ -46,16 +47,19 @@ impl Host {
         }
     }
 
-    pub fn test_event(& mut self) {
+    pub fn test_participant_event(& mut self, endpoint: Endpoint) {
 
-        use crate::operand::Operand;
+        self.event_queue.sender().send(Event::SendData(endpoint,
+            vec![Operand::I64(134), Operand::I64(24)]
+        ));
 
         let table = get_instructions();
         let mut builder = stack_vm::Builder::new(&table);
-        builder.push("pushl", vec![Operand::I64(40)]);
-        builder.push("print_s", vec![]);
+        builder.push("movc", vec![Operand::I64(0), Operand::I64(4)]);
+        builder.push("pushv", vec![Operand::I64(0)]);
 
-        self.event_queue.sender().send(Event::SendCode(*self.participants.iter().next().unwrap(), SerdeCodeOperand::from(builder)));
+
+        self.event_queue.sender().send(Event::SendCode(endpoint, SerdeCodeOperand::from(builder)));
 
     }
 
@@ -74,19 +78,17 @@ impl Host {
                             self.participants.insert(endpoint);
 
 
-                            self.test_event();
+                            self.test_participant_event(endpoint);
 
                             println!("Set: {:?}", self.participants);
                         },
                         Message::Unregister => {
                             self.participants.remove(&endpoint);
                         },
-                        Message::VectorI64PTH(data, identifier) => {
-                            //Save data to computer path using 'identifier' and time and date as file name
-                        },
-                        Message::VectorF64PTH(data, identifier) => {
-                            //Save data to computer path using 'identifier' and time and date as file name
+                        Message::VectorPTH(data) => {
+                            //Save data to computer path using endpoint and time and date as file name
 
+                            println!("Data received: {:?}", data);
                         },
                         _ => {
                             panic!("Invalid message received by host ({:?})", message);
@@ -110,11 +112,8 @@ impl Host {
             Event::SendCode(endpoint, code) => {
                 self.network.send(endpoint, Message::Code(code));
             },
-            Event::SendI64(endpoint, data) => {
-                self.network.send(endpoint, Message::VectorI64HTP(data));
-            },
-            Event::SendF649(endpoint, data) => {
-                self.network.send(endpoint, Message::VectorF64HTP(data));
+            Event::SendData(endpoint, data) => {
+                self.network.send(endpoint, Message::VectorHTP(data));
             }
         }
 

@@ -1,4 +1,4 @@
-use stack_vm::{InstructionTable, Instruction, Machine, Code, Builder};
+use stack_vm::{InstructionTable, Instruction, Machine, Code, Builder, WriteManyTable};
 
 use crate::operand::Operand;
 
@@ -45,6 +45,7 @@ impl<T> Into<Code<T>> for SerdeCode<T> {
 
 pub type SerdeCodeOperand = SerdeCode<Operand>;
 pub type Instructions = InstructionTable<Operand>;
+pub type Constants = WriteManyTable<Operand>;
 
 pub fn get_instructions() -> Instructions {
     let mut instruction_table = InstructionTable::new();
@@ -65,97 +66,170 @@ pub fn get_instructions() -> Instructions {
     instruction_table.insert(Instruction::new(14, "dec", 0, dec));
     instruction_table.insert(Instruction::new(15, "copy", 0, copy));
     instruction_table.insert(Instruction::new(16, "pushc", 1, push_c));
+    instruction_table.insert(Instruction::new(17, "pushdl", 1, push_d_l));
+    instruction_table.insert(Instruction::new(18, "pushds", 0, push_d_s));
+
+    instruction_table.insert(Instruction::new(19, "movds", 1, mov_d_s));
+    instruction_table.insert(Instruction::new(20, "movdl", 2, mov_d_l));
+    instruction_table.insert(Instruction::new(21, "movdv", 2, mov_d_v));
+    instruction_table.insert(Instruction::new(22, "movc", 2, mov_c));
     instruction_table
 }
 
+pub fn get_constants() -> Constants {
+    use std::f64::consts;
 
+    use stack_vm::Table;
+
+
+    let mut constants = WriteManyTable::new();
+
+    constants.insert("0", Operand::F64(consts::PI));                    //Pi
+    constants.insert("1", Operand::F64(consts::FRAC_1_PI));             //1/pi
+    constants.insert("2", Operand::F64(consts::FRAC_1_PI * 0.5f64));    //1/(2pi)
+    constants.insert("2", Operand::F64(consts::FRAC_PI_2));             //pi/2
+    constants.insert("3", Operand::F64(2.0f64 * consts::PI));           //2pi
+    constants.insert("4", Operand::F64(consts::E));                     //e
+    constants.insert("5", Operand::F64(consts::SQRT_2));                //sqrt(2)
+    constants.insert("6", Operand::F64(consts::FRAC_1_SQRT_2));         //1/sqrt(2)
+    constants.insert("7", Operand::F64(consts::LN_2));                  //ln(2)
+    constants.insert("8", Operand::F64(consts::LN_10));                 //ln(10)
+    constants.insert("9", Operand::F64(consts::LOG2_10));               //log_2(10)
+    constants.insert("10", Operand::F64(consts::LOG2_E));               //log_2(e)
+    constants.insert("11", Operand::F64(consts::LOG10_2));              //log_10(2)
+    constants.insert("12", Operand::F64(consts::LOG10_E));              //log_10(e)
+
+    constants
+}
 
 /* Data Transfer */
 
 //Push a literal on to the stack
-pub fn push_l(machine: &mut Machine<Operand>, args: &[usize]) {
-    let arg = machine.get_data(args[0]).clone();
+fn push_l(machine: &mut Machine<Operand>, args: &[usize]) {
+    let arg = *machine.get_data(args[0]);
     machine.operand_push(arg);
 }
 
 //Push the contents of a local variable on the stack
-pub fn push_v(machine: &mut Machine<Operand>, args: &[usize]) {
-    let operand = machine.get_data(args[0]).clone();
+fn push_v(machine: &mut Machine<Operand>, args: &[usize]) {
+    let operand = *machine.get_data(args[0]);
 
-    let local = machine.get_local(operand.str_identifier().as_str()).clone();
-    match local {
-        Some(value) => {
-            machine.operand_push(value.clone());
-        },
-        None => {
-            //Send info to host to inform of error
-            panic!("No such local variable");
-        }
-    }
+    let local = *machine.get_local(operand.str_identifier().as_str()).expect("No such local variable");
+
+
+    machine.operand_push(local);
+
 }
 
-pub fn push_c(machine: &mut Machine<Operand>, args: &[usize]) {
-    let ind = machine.get_data(args[0]).clone();
-    let constant = machine.constants.get(ind.str_identifier().as_str()).expect("Unkown constant").clone();
-    machine.operand_push(constant);
+fn push_c(machine: &mut Machine<Operand>, args: &[usize]) {
+    let ind = machine.get_data(args[0]);
+    let constant = machine.constants.get(ind.str_identifier().as_str()).expect("Unkown constant");
+    machine.operand_push(*constant);
+}
+
+//Push the nth element (literal) from the pseudo heap onto the operand stack
+fn push_d_l(machine: &mut Machine<Operand>, args: &[usize]) {
+    let ind = *machine.get_data(args[0]);
+    let element = *machine.get_local_deep(&format!("d_{}", ind.str_identifier())).expect("Local variable deep search failed.");
+    machine.operand_push(element);
+}
+
+//Push the nth element (top of stack) from the pseudo heap onto the operand stack
+fn push_d_s(machine: &mut Machine<Operand>, _args: &[usize]) {
+    let ind = machine.operand_pop();
+    let element = *machine.get_local_deep(&format!("d_{}", ind.str_identifier())).expect("Local variable deep search failed.");
+    machine.operand_push(element);
 }
 
 //Pop value off stack into local variable
-pub fn pop_v(machine: &mut Machine<Operand>, args: &[usize]) {
-    let operand = machine.get_data(args[0]).clone();
-    let arg = machine.operand_pop().clone();
+fn pop_v(machine: &mut Machine<Operand>, args: &[usize]) {
+
+    let operand = *machine.get_data(args[0]);
+    let arg = machine.operand_pop();
     machine.set_local(operand.str_identifier().as_str(), arg);
 }
 
 //Move a literal into a local variable
-pub fn mov_l(machine: &mut Machine<Operand>, args: &[usize]) {
-    let operand = machine.get_data(args[0]).clone();
-    let arg = machine.get_data(args[1]).clone();
+fn mov_l(machine: &mut Machine<Operand>, args: &[usize]) {
+    let operand = *machine.get_data(args[0]);
+    let arg = *machine.get_data(args[1]);
     machine.set_local(operand.str_identifier().as_str(), arg);
 }
 
 //Move a value from one local variable directly to another?
-pub fn mov_v(machine: &mut Machine<Operand>, args: &[usize]) {
-    let opa = machine.get_data(args[0]).clone();
-    let opb = machine.get_data(args[1]).clone();
-    let local = machine.get_local(opb.str_identifier().as_str());
-    match local {
-        Some(variable) => {
-            machine.set_local(opa.str_identifier().as_str(), variable.clone());
-        },
-        None => {
-            //Send info to host to inform of error
-            panic!("No such local variable");
-        }
-    }
+fn mov_v(machine: &mut Machine<Operand>, args: &[usize]) {
+    let opa = *machine.get_data(args[0]);
+    let opb = *machine.get_data(args[1]);
+    let local = *machine.get_local(opb.str_identifier().as_str()).expect("No such local variable");
+
+    machine.set_local(opa.str_identifier().as_str(), local);
+
 }
 
-pub fn copy(machine: &mut Machine<Operand>, _args: &[usize]) {
+//Move constant into local variable
+fn mov_c(machine: &mut Machine<Operand>, args: &[usize]) {
+    let variable_ind= *machine.get_data(args[0]);
+    let constant_ind = *machine.get_data(args[1]);
+    let constant = *machine.constants.get(constant_ind.str_identifier().as_str()).expect("Unknown constant");
+
+
+    machine.set_local(variable_ind.str_identifier().as_str(), constant);
+}
+
+//Move data from heap (addressed with a literal) into local variable
+fn mov_d_l(machine: &mut Machine<Operand>, args: &[usize]) {
+    let heap_ind = *machine.get_data(args[1]);
+    let local_ind = *machine.get_data(args[0]);
+    let data = *machine.get_local_deep(&format!("d_{}", heap_ind.str_identifier())).expect("Unknown constant");
+
+    machine.set_local(local_ind.str_identifier().as_str(), data);
+}
+
+//Move data from heap (addressed with the top of the op stack) into local variable
+fn mov_d_s(machine: &mut Machine<Operand>, args: &[usize]) {
+    let heap_ind = machine.operand_pop();
+    let local_ind = *machine.get_data(args[0]);
+    let data = *machine.get_local_deep(&format!("d_{}", heap_ind.str_identifier())).expect("Unknown constant");
+
+    machine.set_local(local_ind.str_identifier().as_str(), data);
+}
+
+//Move data from heap (addressed with local variable) into local variable
+fn mov_d_v(machine: &mut Machine<Operand>, args: &[usize]) {
+    let heap_variable_ind = *machine.get_data(args[1]);
+    let heap_variable = *machine.get_local(heap_variable_ind.str_identifier().as_str()).expect("No such local variable");
+    let local_ind = *machine.get_data(args[0]);
+    let data = *machine.get_local_deep(&format!("d_{}", heap_variable.str_identifier())).expect("Unknown constant");
+
+    machine.set_local(local_ind.str_identifier().as_str(), data);
+}
+
+fn copy(machine: &mut Machine<Operand>, _args: &[usize]) {
     let top = machine.operand_stack.peek().clone();
     machine.operand_push(top);
 }
 
 /* Maths functions */
 
-pub fn add(machine: &mut Machine<Operand>, _args: &[usize]) {
-    let rhs = machine.operand_pop().clone();
-    let lhs = machine.operand_pop().clone();
+fn add(machine: &mut Machine<Operand>, _args: &[usize]) {
+    let rhs = machine.operand_pop();
+    let lhs = machine.operand_pop();
     machine.operand_push(lhs + rhs);
 }
 
-pub fn sub(machine: &mut Machine<Operand>, _args: &[usize]) {
-    let rhs = machine.operand_pop().clone();
-    let lhs = machine.operand_pop().clone();
+fn sub(machine: &mut Machine<Operand>, _args: &[usize]) {
+    let rhs = machine.operand_pop();
+    let lhs = machine.operand_pop();
     machine.operand_push(lhs - rhs);
 }
 
-pub fn inc(machine: &mut Machine<Operand>, _args: &[usize]) {
-    let top = machine.operand_pop().clone();
+fn inc(machine: &mut Machine<Operand>, _args: &[usize]) {
+    let top = machine.operand_pop();
     machine.operand_push(top + Operand::I64(1));
 }
 
-pub fn dec(machine: &mut Machine<Operand>, _args: &[usize]) {
-    let top = machine.operand_pop().clone();
+fn dec(machine: &mut Machine<Operand>, _args: &[usize]) {
+    let top = machine.operand_pop();
     machine.operand_push(top - Operand::I64(1));
 }
 
@@ -167,7 +241,7 @@ pub fn dec(machine: &mut Machine<Operand>, _args: &[usize]) {
 /* Jumps */
 
 fn jmp(machine: &mut Machine<Operand>, args: &[usize]) {
-    let label = machine.get_data(args[0]).clone();
+    let label = *machine.get_data(args[0]);
     machine.jump(label.str_identifier().as_str());
 }
 
@@ -175,7 +249,7 @@ fn jz(machine: &mut Machine<Operand>, args: &[usize]) {
     let top = machine.operand_pop();
 
     if top == Operand::I64(0) {
-        let label = machine.get_data(args[0]).clone();
+        let label = *machine.get_data(args[0]);
         machine.jump(label.str_identifier().as_str());
     }
 
@@ -185,7 +259,7 @@ fn jnz(machine: &mut Machine<Operand>, args: &[usize]) {
     let top = machine.operand_pop();
 
     if top != Operand::I64(0) {
-        let label = machine.get_data(args[0]).clone();
+        let label = *machine.get_data(args[0]);
         machine.jump(label.str_identifier().as_str());
     }
 
@@ -194,7 +268,7 @@ fn jnz(machine: &mut Machine<Operand>, args: &[usize]) {
 /* Call */
 
 fn call(machine: &mut Machine<Operand>, args: &[usize]) {
-    let label = machine.get_data(args[0]).clone();
+    let label = *machine.get_data(args[0]);
     machine.call(label.str_identifier().as_str());
 }
 
@@ -205,15 +279,23 @@ fn ret(machine: &mut Machine<Operand>, _args: &[usize]) {
 /* Debug */
 
 fn print_s(machine: &mut Machine<Operand>, _args: &[usize]) {
-    let top = machine.operand_stack.peek().clone();
+    let top = machine.operand_stack.peek();
 
     println!("Top: {:?} (ip: {})", top, machine.ip);
 }
+
+/* Allocation */
+
+/*fn allocate(machine: &mut Machine<Operand>, _args: &[usize]) {
+    for i in 0..10 {
+        machine.set_local(i.to_string().as_str(), Operand::I64(0));
+    }
+}*/
 
 /* Communication */
 
 //Send, receive and Check
 
 //Check: Checks the event queue for comms from the host. POssible commands include:
-    //Stop: This can be achieved by jumping to a label at the end of the VM. Or calling 'ret' until the VM stops
+    //Stop: This can be achieved by jumping to a label at the end of the VM.
     //Pause: Block the VM until

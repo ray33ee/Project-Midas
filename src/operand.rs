@@ -12,7 +12,7 @@ use std::cmp::Ordering;
 use serde::{Serialize, Deserialize};
 
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Copy)]
 pub enum Operand {
     I64(i64),
     F64(f64)
