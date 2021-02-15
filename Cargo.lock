@@ -254,7 +254,7 @@ dependencies = [
 
 [[package]]
 name = "midas"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "clap",
  "ipaddress",
@@ -556,9 +556,7 @@ dependencies = [
 
 [[package]]
 name = "stack-vm"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca57a0e94d7a71504e4121c64a633d5f58e2f42ef65a493dff0deb7bd6ade13d"
+version = "1.0.2"
 dependencies = [
  "rmp",
 ]

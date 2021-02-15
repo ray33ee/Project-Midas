@@ -53,8 +53,8 @@ impl Host {
 
         let table = get_instructions();
         let mut builder = stack_vm::Builder::new(&table);
-        builder.push("movl", vec![Operand::I64(0), Operand::I64(1)]);
-        builder.push("pushdv", vec![Operand::I64(0)]);
+        builder.push("pushl", vec![Operand::I64(400)]);
+        builder.push("pushl", vec![Operand::I64(400)]);
 
 
         self.event_queue.sender().send(Event::SendCode(endpoint, SerdeCodeOperand::from(builder)));

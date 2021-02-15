@@ -4,9 +4,14 @@ To DO:
         - Allow labels to be any string (except numbers)
         - Deduce instruction type from operand.
         - Use basic notation to indicate constants, literals, etc.
+    - Create fancy changelog in accordance with https://keepachangelog.com/en/1.0.0/
+    - Modify the _d instructions to use our new Machine::heap field
+    - Add check instruction with an empty body
+        - When Participant::check_events finds the 'check' instruction, check to see if the machine has been paused or stopped
 
 To think about:
     - Implement Pause, Play and Stop functionality within Participants
     - Think of a way to handle data sent from participant to host.
         - Where should it be saved on the computer?
         - How should it be serialised?
+    - Use [patch] in Cargo.toml to modify Machine struct

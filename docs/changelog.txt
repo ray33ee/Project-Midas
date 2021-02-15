@@ -1,3 +1,12 @@
+Version 0.1.5
+    - We now automatically pull the version number from Cargo.toml for use in clap
+    - stack_vm now modified into iterator that allows us to step instructions
+    - stack_vm modified to allow a heap
+    - Participant now contains the machine as a field
+    - Each call of check_events will call Machine::next() if the machine is loaded
+    - Stepping over machine prevents the blocking affect of Machine::run
+    - Participant::check_events now uses EventQueue::receive_timeout so we can execute in within main loop
+
 Version 0.1.4
     - Logical numbering of opcodes grouping similar instructions together and leaving gaps for future codes
     - Now we use SocketAddrV4 to validate IP addresses (with port number)
