@@ -50,8 +50,10 @@ impl Host {
 
     pub fn test_participant_event(& mut self, endpoint: Endpoint) {
 
+        use crate::compiler::compile_source;
+
         self.event_queue.sender().send(Event::SendData(endpoint,
-        vec![Operand::I64(134), Operand::I64(24)]
+        vec![Operand::I64(173), Operand::I64(10), Operand::I64(50)]
         ));
 
         let table = get_instructions();
@@ -60,8 +62,20 @@ impl Host {
         builder.push("pushdl", vec![Operand::I64(1)]);
         builder.push("add", vec![]);
 
+        use std::fs::File;
+        use std::io::Read;
+
+        let mut file = File::open(".\\docs\\sample_code.txt").unwrap();
+
+        let mut source = String::new();
+
+        file.read_to_string(&mut source);
+
+        let (builder, cons) = compile_source(source.as_str(), &table);
 
         self.event_queue.sender().send(Event::SendCode(endpoint, SerdeCodeOperand::from(builder)));
+
+
 
 
 

@@ -64,14 +64,13 @@ pub fn get_instructions() -> Instructions {
 
     instruction_table.insert(Instruction::new(30, "movl", 2, mov_l));
     instruction_table.insert(Instruction::new(31, "movv", 2, mov_v));
+    instruction_table.insert(Instruction::new(32, "movc", 2, mov_c));
 
     instruction_table.insert(Instruction::new(40, "movds", 1, mov_d_s));
     instruction_table.insert(Instruction::new(41, "movdl", 2, mov_d_l));
     instruction_table.insert(Instruction::new(42, "movdv", 2, mov_d_v));
 
-    instruction_table.insert(Instruction::new(50, "movc", 2, mov_c));
-
-    instruction_table.insert(Instruction::new(60, "copy", 0, copy));
+    instruction_table.insert(Instruction::new(50, "copy", 0, copy));
 
     //Function calls
     instruction_table.insert(Instruction::new(100, "call", 1, call));
@@ -92,6 +91,8 @@ pub fn get_instructions() -> Instructions {
     //Unary operations
     instruction_table.insert(Instruction::new(400, "inc", 0, inc));
     instruction_table.insert(Instruction::new(401, "dec", 0, dec));
+    instruction_table.insert(Instruction::new(402, "div", 0, div));
+    instruction_table.insert(Instruction::new(403, "mod", 0, modulo));
 
     //Debug instructions
     instruction_table.insert(Instruction::new(500, "print_s", 0, print_s));
@@ -299,6 +300,18 @@ fn sub(machine: &mut Machine<Operand>, _args: &[usize]) {
     machine.operand_push(lhs - rhs);
 }
 
+fn div(machine: &mut Machine<Operand>, _args: &[usize]) {
+    let rhs = machine.operand_pop();
+    let lhs = machine.operand_pop();
+    machine.operand_push(lhs / rhs)
+}
+
+fn modulo(machine: &mut Machine<Operand>, _args: &[usize]) {
+    let rhs = machine.operand_pop();
+    let lhs = machine.operand_pop();
+    machine.operand_push(lhs % rhs);
+}
+
 fn inc(machine: &mut Machine<Operand>, _args: &[usize]) {
     let top = machine.operand_pop();
     machine.operand_push(top + Operand::I64(1));
@@ -393,7 +406,5 @@ fn ret(machine: &mut Machine<Operand>, _args: &[usize]) {
 /* Debug */
 
 fn print_s(machine: &mut Machine<Operand>, _args: &[usize]) {
-    let top = machine.operand_stack.peek();
-
-    println!("Top: {:?} (ip: {})", top, machine.ip);
+    println!("Stack: {:?}", machine.operand_stack);
 }

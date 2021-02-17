@@ -5,20 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a3f319ce-e5c8-4c19-bebc-65d775750dda" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/changelog.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/changelog.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/changelog.md" beforeDir="false" afterPath="$PROJECT_DIR$/changelog.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/sample_code.txt" beforeDir="false" afterPath="$PROJECT_DIR$/docs/sample_code.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/todo.txt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/compiler.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/compiler.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/host.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/host.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/instructions.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/instructions.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/operand.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/operand.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/participant.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/participant.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -154,7 +149,7 @@
       <recent name="E:\Software Projects\IntelliJ\midas\stack_vm\src" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Debug Host">
+  <component name="RunManager" selected="Cargo.Debug Participant">
     <configuration name="Debug Help" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
       <option name="command" value="run -- -h" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />

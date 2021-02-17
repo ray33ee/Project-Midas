@@ -63,7 +63,7 @@ impl<'a> Participant<'a> {
                 Some(m) => {
                     match m.next() {
                         Some((instr, _args)) => {
-                            println!("calculating {}", instr.op_code);
+                            //println!("calculating {}", instr.op_code);
                         },
                         None => {
                             println!("Finished");

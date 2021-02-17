@@ -14,7 +14,7 @@ use crate::instructions::{get_instructions, get_constants};
 
 fn main() {
 
-    compiler::test();
+
 
     use std::net::SocketAddrV4;
     use std::str::FromStr;

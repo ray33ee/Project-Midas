@@ -3,13 +3,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Archive
+Unfortunately, due to the extremely slow nature of the vm (just one loop of the very simple sample_code example takes about 1/6th of a second) this project will now longer be updated. 
+Possible actions to alleviate this include:
+- Investigating the stack_vm code and the sample_code to identfy the issue
+- Migrating from a virtual machine a native binary via llvm.
+
+The first idea will take a lot of time to investigate (perhaps more than it is with) and the second idea has issues as well such as
+- Adding our own custom features to the language becomes more difficult
+- The developer must now be concerned about OS compatibility (not an issue with the VM)
+- Using the llvm interpreter or a native binary requires code be executed in a separate process. Communicating with this process is cumbersome and OS dependent.
+
+While this project is no longer viable (there exist other distributed computing solutions) it has been a very useful and informative project for the author.
 
 ## [Unreleased]
 ### To Do
 - Add instructions (including loads of useful maths functions, bitwise functions)
-- Create a MidasVM compiler struct and language to convert source code into a serialised MyCode object.
-  - Deduce instruction type from operand.
-  - Make sure all bytecode is appended with the 'stop' label
+- Make sure all bytecode is appended with the 'stop' label
 - Add readme for project and modify stack_vm readme to outline changes
 - Find a way dynamically generate certain repetitive code based on xml or json. Candidates include:
   - List of instructions (created in get_instructions)
@@ -17,13 +27,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Pre-defined constant map (created in get_constants_map)
 - Modify float_reg to allow lack of leading zero, such as '.3' and exponents such as '0.3e4' still making sure we do not allow integers
 - Implement error handling for compiler.rs (go over unpack and expect first)
-- Find a better way to pass Regexes around
 - Make sure the constants table we generate doesn't conflict with the predefined constants
 
 ### Unfinished Ideas
 - Think of a way to handle data sent from participant to host.
   - Where should it be saved on the computer?
-  - How should it be serialised?
+  - How should it be serialised
+- Do the constants, label and variable maps need to be maps? can't they just be lists?
+
+## [0.1.7] - 2021-02-17
+### Added
+- We now declare lazy statics in a more global sense to avoid having to pass them around
+- mod instruction added, and is used in the sample_code
+- Sample code now uses a jz instruction in loop
+- Compiler.rs now contains an iterator that walks over each line in source and outputs a Statement enum
+- The statement enum is then interpreted and added to the builder
+- print_s instruction now prints the entire stack instead of just the top
 
 ## [0.1.6] - 2021-02-15
 ### Added

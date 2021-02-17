@@ -10,7 +10,8 @@
 start:
     push $suspect       #
     push $divisor       #
-    div                 # Divide the suspected prime by the next divisor
+    print $stack
+    mod                 # Divide the suspected prime by the next divisor
     jz finished         # If it divides, end the search
     push $divisor
     inc                 # Increment the $divisor variable
@@ -18,7 +19,7 @@ start:
     pop $divisor
     push $upper
     eq                  # If we still have numbers to search, go to beginning
-    jnz start
+    jz start
 
     mov $divisor 0      # Moving 0 into the divisor (and eventually the stack) means no divisors were found
 
