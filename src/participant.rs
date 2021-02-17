@@ -1,5 +1,5 @@
 use crate::messages::Message;
-use crate::instructions::{get_instructions, Instructions, get_constants};
+use crate::instructions::Instructions;
 use crate::operand::Operand;
 
 use message_io::network::Endpoint;
@@ -7,7 +7,7 @@ use message_io::network::Endpoint;
 use message_io::events::{EventQueue};
 use message_io::network::{Network, NetEvent, Transport};
 
-use stack_vm::{Machine, WriteManyTable, Code};
+use stack_vm::{Machine, WriteManyTable};
 
 enum Event {
     Network(NetEvent<Message>)
@@ -20,7 +20,8 @@ pub struct Participant<'a> {
 
     data: Option<Vec<Operand>>,
 
-    machine: Option<Machine<'a, Operand>>
+    machine: Option<Machine<'a, Operand>>,
+    paused: bool,
 }
 
 impl<'a> Participant<'a> {
@@ -43,7 +44,8 @@ impl<'a> Participant<'a> {
                 event_queue,
                 network,
                 data: Some(Vec::new()),
-                machine: None
+                machine: None,
+                paused: false
             }
         }
         else {
@@ -56,29 +58,27 @@ impl<'a> Participant<'a> {
 
     pub fn check_events(& mut self, constants: & 'a WriteManyTable<Operand>, instructions: & 'a Instructions) {
 
+        if !self.paused {
+            match &mut self.machine {
+                Some(m) => {
+                    match m.next() {
+                        Some((instr, _args)) => {
+                            println!("calculating {}", instr.op_code);
+                        },
+                        None => {
+                            println!("Finished");
 
-        match & mut self.machine {
-            Some(m) => {
-                match m.next() {
-                    Some((instr, args)) => {
+                            let data_to_send_to_host = self.machine.take().unwrap().operand_stack.as_slice().to_vec();
 
-                        println!("calculating {}", instr.op_code);
-                    },
-                    None => {
-                        println!("Finished");
-
-                        let data_to_send_to_host = self.machine.take().unwrap().operand_stack.as_slice().to_vec();
-
-                        self.network.send(self.host_endpoint, Message::VectorPTH(data_to_send_to_host));
+                            self.network.send(self.host_endpoint, Message::VectorPTH(data_to_send_to_host));
 
 
-                        self.machine = None;
+                            self.machine = None;
+                        }
                     }
-                }
-
-
-            },
-            None=> {}
+                },
+                None => {}
+            }
         }
 
         match self.event_queue.receive_timeout(std::time::Duration::from_millis(10)) {
@@ -99,6 +99,16 @@ impl<'a> Participant<'a> {
                             Message::VectorHTP(data) => {
                                 self.data = Some(data);
                             },
+                            Message::Pause => {
+                                self.paused = true;
+                            },
+                            Message::Play => {
+                                self.paused = false;
+                            },
+                            Message::Stop => {
+                                self.machine = None;
+                                self.paused = false;
+                            }
                             _ => { /*panic!("Invalid message {:?}", message);*/ }
                         }
                     }

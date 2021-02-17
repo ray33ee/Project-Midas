@@ -3,13 +3,18 @@ mod instructions;
 mod host;
 mod participant;
 mod messages;
+mod compiler;
 
+
+#[macro_use] extern crate lazy_static;
 extern crate clap;
 
 use clap::{crate_version, Arg, App};
-use crate::instructions::{get_instructions, Instructions, get_constants};
+use crate::instructions::{get_instructions, get_constants};
 
 fn main() {
+
+    compiler::test();
 
     use std::net::SocketAddrV4;
     use std::str::FromStr;

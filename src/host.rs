@@ -15,6 +15,9 @@ enum Event {
     Network(NetEvent<Message>),
     SendCode(Endpoint, SerdeCodeOperand),
     SendData(Endpoint, Vec<Operand>),
+    Pause(Endpoint),
+    Play(Endpoint),
+    Stop(Endpoint),
 }
 
 pub struct Host {
@@ -48,16 +51,19 @@ impl Host {
     pub fn test_participant_event(& mut self, endpoint: Endpoint) {
 
         self.event_queue.sender().send(Event::SendData(endpoint,
-            vec![Operand::I64(134), Operand::I64(24)]
+        vec![Operand::I64(134), Operand::I64(24)]
         ));
 
         let table = get_instructions();
         let mut builder = stack_vm::Builder::new(&table);
-        builder.push("pushl", vec![Operand::I64(400)]);
-        builder.push("pushl", vec![Operand::I64(400)]);
+        builder.push("pushdl", vec![Operand::I64(0)]);
+        builder.push("pushdl", vec![Operand::I64(1)]);
+        builder.push("add", vec![]);
 
 
         self.event_queue.sender().send(Event::SendCode(endpoint, SerdeCodeOperand::from(builder)));
+
+
 
     }
 
@@ -68,7 +74,7 @@ impl Host {
             Event::Network(net_event) => match net_event {
                 NetEvent::Message(endpoint, message) => {
 
-                    println!("Message got");
+                    println!("Message received");
 
                     match message {
                         Message::Register => {
@@ -112,6 +118,15 @@ impl Host {
             },
             Event::SendData(endpoint, data) => {
                 self.network.send(endpoint, Message::VectorHTP(data));
+            },
+            Event::Pause(endpoint) => {
+                self.network.send(endpoint, Message::Pause);
+            },
+            Event::Play(endpoint) => {
+                self.network.send(endpoint, Message::Play);
+            },
+            Event::Stop(endpoint) => {
+                self.network.send(endpoint, Message::Stop);
             }
         }
 

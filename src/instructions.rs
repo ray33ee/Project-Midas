@@ -133,7 +133,7 @@ pub fn get_constants() -> Constants {
     constants
 }
 
-pub fn get_const_map() -> HashMap<&'static str, &'static str> {
+pub fn get_constants_map() -> HashMap<&'static str, &'static str> {
     let mut map = HashMap::new();
 
     map.insert("PI", "0");
@@ -157,6 +157,7 @@ pub fn get_const_map() -> HashMap<&'static str, &'static str> {
 /* Data Transfer */
 
 //Push a literal on to the stack
+//push LITERAL
 fn push_l(machine: &mut Machine<Operand>, args: &[usize]) {
     let arg = *machine.get_data(args[0]);
     machine.operand_push(arg);
@@ -175,7 +176,7 @@ fn push_v(machine: &mut Machine<Operand>, args: &[usize]) {
 }
 
 //Push a constant onto the stack
-//push CONSTANT
+//push .CONSTANT
 fn push_c(machine: &mut Machine<Operand>, args: &[usize]) {
     let ind = machine.get_data(args[0]);
     let constant = machine.constants.get(ind.str_identifier().as_str()).expect("Unkown constant");
@@ -186,7 +187,7 @@ fn push_c(machine: &mut Machine<Operand>, args: &[usize]) {
 //push [LITERAL]
 fn push_d_l(machine: &mut Machine<Operand>, args: &[usize]) {
     let ind = *machine.get_data(args[0]);
-    let element = *machine.get_local_deep(&format!("d_{}", ind.str_identifier())).expect("Local variable deep search failed.");
+    let element = machine.heap[ind.identifier() as usize];
     machine.operand_push(element);
 }
 
@@ -194,7 +195,7 @@ fn push_d_l(machine: &mut Machine<Operand>, args: &[usize]) {
 //push [$stack]
 fn push_d_s(machine: &mut Machine<Operand>, _args: &[usize]) {
     let ind = machine.operand_pop();
-    let element = *machine.get_local_deep(&format!("d_{}", ind.str_identifier())).expect("Local variable deep search failed.");
+    let element = machine.heap[ind.identifier() as usize];
     machine.operand_push(element);
 }
 
@@ -203,7 +204,7 @@ fn push_d_s(machine: &mut Machine<Operand>, _args: &[usize]) {
 fn push_d_v(machine: &mut Machine<Operand>, args: &[usize]) {
     let ind = *machine.get_data(args[0]);
     let variable = *machine.get_local(ind.str_identifier().as_str()).expect("No such local variable");
-    let element = *machine.get_local_deep(&format!("d_{}", variable.str_identifier())).expect("Local variable deep search failed.");
+    let element = machine.heap[variable.identifier() as usize];
     machine.operand_push(element);
 }
 
@@ -236,7 +237,7 @@ fn mov_v(machine: &mut Machine<Operand>, args: &[usize]) {
 }
 
 //Move constant into local variable
-//mov $VARIABLE CONSTANT
+//mov $VARIABLE .CONSTANT
 fn mov_c(machine: &mut Machine<Operand>, args: &[usize]) {
     let variable_ind= *machine.get_data(args[0]);
     let constant_ind = *machine.get_data(args[1]);
@@ -251,9 +252,9 @@ fn mov_c(machine: &mut Machine<Operand>, args: &[usize]) {
 fn mov_d_l(machine: &mut Machine<Operand>, args: &[usize]) {
     let heap_ind = *machine.get_data(args[1]);
     let local_ind = *machine.get_data(args[0]);
-    let data = *machine.get_local_deep(&format!("d_{}", heap_ind.str_identifier())).expect("Unknown constant");
+    let element = machine.heap[heap_ind.identifier() as usize];
 
-    machine.set_local(local_ind.str_identifier().as_str(), data);
+    machine.set_local(local_ind.str_identifier().as_str(), element);
 }
 
 //Move data from heap (addressed with the top of the op stack) into local variable
@@ -261,9 +262,9 @@ fn mov_d_l(machine: &mut Machine<Operand>, args: &[usize]) {
 fn mov_d_s(machine: &mut Machine<Operand>, args: &[usize]) {
     let heap_ind = machine.operand_pop();
     let local_ind = *machine.get_data(args[0]);
-    let data = *machine.get_local_deep(&format!("d_{}", heap_ind.str_identifier())).expect("Unknown constant");
+    let element = machine.heap[heap_ind.identifier() as usize];
 
-    machine.set_local(local_ind.str_identifier().as_str(), data);
+    machine.set_local(local_ind.str_identifier().as_str(), element);
 }
 
 //Move data from heap (addressed with local variable) into local variable
@@ -272,9 +273,9 @@ fn mov_d_v(machine: &mut Machine<Operand>, args: &[usize]) {
     let heap_variable_ind = *machine.get_data(args[1]);
     let heap_variable = *machine.get_local(heap_variable_ind.str_identifier().as_str()).expect("No such local variable");
     let local_ind = *machine.get_data(args[0]);
-    let data = *machine.get_local_deep(&format!("d_{}", heap_variable.str_identifier())).expect("Unknown constant");
+    let element = machine.heap[heap_variable.identifier() as usize];
 
-    machine.set_local(local_ind.str_identifier().as_str(), data);
+    machine.set_local(local_ind.str_identifier().as_str(), element);
 }
 
 //Duplicate the top element of the stack
@@ -396,19 +397,3 @@ fn print_s(machine: &mut Machine<Operand>, _args: &[usize]) {
 
     println!("Top: {:?} (ip: {})", top, machine.ip);
 }
-
-/* Allocation */
-
-/*fn allocate(machine: &mut Machine<Operand>, _args: &[usize]) {
-    for i in 0..10 {
-        machine.set_local(i.to_string().as_str(), Operand::I64(0));
-    }
-}*/
-
-/* Communication */
-
-//Send, receive and Check
-
-//Check: Checks the event queue for comms from the host. POssible commands include:
-    //Stop: This can be achieved by jumping to a label at the end of the VM.
-    //Pause: Block the VM until
