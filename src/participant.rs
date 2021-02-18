@@ -58,12 +58,14 @@ impl<'a> Participant<'a> {
 
     pub fn check_events(& mut self, constants: & 'a WriteManyTable<Operand>, instructions: & 'a Instructions) {
 
+
         if !self.paused {
             match &mut self.machine {
                 Some(m) => {
+
                     match m.next() {
-                        Some((instr, _args)) => {
-                            //println!("calculating {}", instr.op_code);
+                        Some((_instr, _args)) => {
+
                         },
                         None => {
                             println!("Finished");
@@ -81,7 +83,7 @@ impl<'a> Participant<'a> {
             }
         }
 
-        match self.event_queue.receive_timeout(std::time::Duration::from_millis(10)) {
+        match self.event_queue.receive_timeout(std::time::Duration::from_micros(1)) {
             Some(event) => match event {
                 Event::Network(net_event) => match net_event {
                     NetEvent::Message(_, message) => {
@@ -117,13 +119,12 @@ impl<'a> Participant<'a> {
                         println!("Server Disconnected");
                     }
                     NetEvent::DeserializationError(_) => (),
-                },
+                }
             },
             None => {
 
             }
         }
-
 
 
     }

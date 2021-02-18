@@ -96,6 +96,7 @@ pub fn get_instructions() -> Instructions {
 
     //Debug instructions
     instruction_table.insert(Instruction::new(500, "print_s", 0, print_s));
+    instruction_table.insert(Instruction::new(501, "print_v", 1, print_v));
 
     //Comparative instructions
     instruction_table.insert(Instruction::new(600, "eq", 0, eq));
@@ -407,4 +408,9 @@ fn ret(machine: &mut Machine<Operand>, _args: &[usize]) {
 
 fn print_s(machine: &mut Machine<Operand>, _args: &[usize]) {
     println!("Stack: {:?}", machine.operand_stack);
+}
+
+fn print_v(machine: &mut Machine<Operand>, args: &[usize]) {
+    let var_ind = *machine.get_data(args[0]);
+    println!("Variable {:?} = {:?}", var_ind, machine.get_local(var_ind.str_identifier().as_str()));
 }

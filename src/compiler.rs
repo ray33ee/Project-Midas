@@ -54,13 +54,10 @@
 
 use regex::{Regex, RegexSet};
 use crate::operand::Operand;
-use crate::compiler::Index::Stack;
 
-use crate::compiler::Argument::Label;
 use std::collections::HashMap;
 
 use stack_vm::Builder;
-use crate::instructions::get_instructions;
 
 
 // Primitive regexes (as defined above) used as macros (so they can be used with concat!)
@@ -279,6 +276,156 @@ impl<'a> Compiler<'a> {
 
     }
 
+
+    pub fn compile_source<'b>(source: &str, instructions: & 'b crate::instructions::Instructions) -> (Builder<'b, Operand>, Vec<Operand>) {
+
+
+        let mut code = Builder::new(instructions);
+
+        let comp = Compiler::new(source);
+
+        let mut constants_list = Vec::with_capacity(comp.get_consttants_map_len());
+
+        for inst in comp {
+            //println!("Statement: {:?}", inst);
+            match inst {
+                Statement::Empty => {},
+                Statement::Instruction(name, vector) => {
+                    match name {
+                        "push" => {
+                            match vector.as_slice() {
+                                [Argument::Literal(lit)] => {
+                                    code.push("pushl", vec![lit.clone()]);
+                                },
+                                [Argument::Variable(ind)] => {
+                                    code.push("pushv", vec![Operand::I64(*ind)]);
+                                },
+                                [Argument::Constant(ind)] => {
+                                    code.push("pushc", vec![Operand::I64(*ind)]);
+                                },
+                                [Argument::Heap(index)] => {
+                                    match index
+                                    {
+                                        Index::I64(lit) => {
+                                            code.push("pushdl", vec![Operand::I64(*lit)]);
+                                        } ,
+                                        Index::Variable(ind) => {
+                                            code.push("pushdv", vec![Operand::I64(*ind)]);
+                                        },
+                                        Index::Stack => {
+                                            code.push("pushds", vec![]);
+                                        }
+                                    }
+                                }
+                                _ => { panic!("Invalid arguments for 'push' instruction ({:?}", vector); }
+                            }
+                        },
+                        "mov" => {
+                            match vector.as_slice() {
+                                [Argument::Variable(inda), Argument::Literal(lit)] => {
+                                    code.push("movl", vec![Operand::I64(*inda), lit.clone()]);
+                                },
+                                [Argument::Variable(inda), Argument::Variable(ind)] => {
+                                    code.push("movv", vec![Operand::I64(*inda), Operand::I64(*ind)]);
+                                },
+                                [Argument::Variable(inda), Argument::Constant(ind)] => {
+                                    code.push("movc", vec![Operand::I64(*inda), Operand::I64(*ind)]);
+                                },
+                                [Argument::Variable(inda), Argument::Heap(index)] => {
+                                    match index
+                                    {
+                                        Index::I64(lit) => {
+                                            code.push("movdl", vec![Operand::I64(*inda), Operand::I64(*lit)]);
+                                        } ,
+                                        Index::Variable(ind) => {
+                                            code.push("movdv", vec![Operand::I64(*inda), Operand::I64(*ind)]);
+                                        },
+                                        Index::Stack => {
+                                            code.push("movds", vec![Operand::I64(*inda)]);
+                                        }
+                                    }
+                                }
+                                _ => { panic!("Invalid arguments for 'mov' instruction ({:?}", vector); }
+                            }
+                        },
+                        "jz" => {
+                            match vector.as_slice() {
+                                [Argument::Label(ind)] => {
+                                    code.push("jz", vec![Operand::I64(*ind)]);
+                                },
+                                _ => { panic!("Invalid arguments for 'jz' instruction ({:?}", vector); }
+                            }
+                        },
+                        "jnz" => {
+                            match vector.as_slice() {
+                                [Argument::Label(ind)] => {
+                                    code.push("jnz", vec![Operand::I64(*ind)]);
+                                },
+                                _ => { panic!("Invalid arguments for 'jnz' instruction ({:?}", vector); }
+                            }
+                        },
+                        "jmp" => {
+                            match vector.as_slice() {
+                                [Argument::Label(ind)] => {
+                                    code.push("jmp", vec![Operand::I64(*ind)]);
+                                },
+                                _ => { panic!("Invalid arguments for 'jmp' instruction ({:?}", vector); }
+                            }
+                        },
+                        "pop" => {
+                            match vector.as_slice() {
+                                [Argument::Variable(ind)] => {
+                                    code.push("popv", vec![Operand::I64(*ind)]);
+                                },
+                                _ => { panic!("Invalid arguments for 'pop' instruction ({:?}", vector); }
+                            }
+                        },
+                        "print" => {
+                            match vector.as_slice() {
+                                [Argument::Stack] => {
+                                    code.push("print_s", vec![]);
+                                },
+                                [Argument::Variable(ind)] => {
+                                    code.push("print_v", vec![Operand::I64(*ind)]);
+                                },
+                                _ => { panic!("Invalid arguments for 'print' instruction ({:?}", vector); }
+                            }
+                        }
+                        _ => {
+                            code.push(name, vec![]);
+                        }
+                    }
+                },
+                Statement::Declaration(index, literal) => {
+                    constants_list[index as usize] = literal;
+                },
+                Statement::Label(index) => {
+                    code.label(index.to_string().as_str());
+                }
+            }
+
+        }
+
+        (code, constants_list)
+
+    }
+
+    pub fn compile_file<'b>(path: &str, instructions: & 'b crate::instructions::Instructions) -> (Builder<'b, Operand>, Vec<Operand>) {
+
+        use std::fs::File;
+        use std::io::Read;
+
+        //get the contents of the source file
+        let mut file = File::open(path /*".\\docs\\sample_code.txt"*/).unwrap();
+
+        let mut source = String::new();
+
+        file.read_to_string(&mut source);
+
+        Compiler::compile_source(source.as_str(), &instructions)
+    }
+
+
 }
 
 impl<'a> Iterator for Compiler<'a> {
@@ -299,154 +446,5 @@ impl<'a> Iterator for Compiler<'a> {
         }
 
     }
-
-}
-
-pub fn compile_source<'a>(source: &str, instructions: & 'a crate::instructions::Instructions) -> (Builder<'a, Operand>, Vec<Operand>) {
-    use std::fs::File;
-    use std::io::Read;
-
-    let mut code = Builder::new(instructions);
-
-    let comp = Compiler::new(source);
-
-    let mut constants_list = Vec::with_capacity(comp.get_consttants_map_len());
-
-    for inst in comp {
-        //println!("Statement: {:?}", inst);
-        match inst {
-            Statement::Empty => {},
-            Statement::Instruction(name, vector) => {
-                match name {
-                    "push" => {
-                        match vector.as_slice() {
-                            [Argument::Literal(lit)] => {
-                                code.push("pushl", vec![lit.clone()]);
-                            },
-                            [Argument::Variable(ind)] => {
-                                code.push("pushv", vec![Operand::I64(*ind)]);
-                            },
-                            [Argument::Constant(ind)] => {
-                                code.push("pushc", vec![Operand::I64(*ind)]);
-                            },
-                            [Argument::Heap(index)] => {
-                                match index
-                                {
-                                    Index::I64(lit) => {
-                                        code.push("pushdl", vec![Operand::I64(*lit)]);
-                                    } ,
-                                    Index::Variable(ind) => {
-                                        code.push("pushdv", vec![Operand::I64(*ind)]);
-                                    },
-                                    Index::Stack => {
-                                        code.push("pushds", vec![]);
-                                    }
-                                }
-                            }
-                            _ => { panic!("Invalid arguments for 'push' instruction ({:?}", vector); }
-                        }
-                    },
-                    "mov" => {
-                        match vector.as_slice() {
-                            [Argument::Variable(inda), Argument::Literal(lit)] => {
-                                code.push("movl", vec![Operand::I64(*inda), lit.clone()]);
-                            },
-                            [Argument::Variable(inda), Argument::Variable(ind)] => {
-                                code.push("movv", vec![Operand::I64(*inda), Operand::I64(*ind)]);
-                            },
-                            [Argument::Variable(inda), Argument::Constant(ind)] => {
-                                code.push("movc", vec![Operand::I64(*inda), Operand::I64(*ind)]);
-                            },
-                            [Argument::Variable(inda), Argument::Heap(index)] => {
-                                match index
-                                {
-                                    Index::I64(lit) => {
-                                        code.push("movdl", vec![Operand::I64(*inda), Operand::I64(*lit)]);
-                                    } ,
-                                    Index::Variable(ind) => {
-                                        code.push("movdv", vec![Operand::I64(*inda), Operand::I64(*ind)]);
-                                    },
-                                    Index::Stack => {
-                                        code.push("movds", vec![Operand::I64(*inda)]);
-                                    }
-                                }
-                            }
-                            _ => { panic!("Invalid arguments for 'mov' instruction ({:?}", vector); }
-                        }
-                    },
-                    "jz" => {
-                        match vector.as_slice() {
-                            [Argument::Label(ind)] => {
-                                code.push("jz", vec![Operand::I64(*ind)]);
-                            },
-                            _ => { panic!("Invalid arguments for 'jz' instruction ({:?}", vector); }
-                        }
-                    },
-                    "jnz" => {
-                        match vector.as_slice() {
-                            [Argument::Label(ind)] => {
-                                code.push("jnz", vec![Operand::I64(*ind)]);
-                            },
-                            _ => { panic!("Invalid arguments for 'jnz' instruction ({:?}", vector); }
-                        }
-                    },
-                    "jmp" => {
-                        match vector.as_slice() {
-                            [Argument::Label(ind)] => {
-                                code.push("jmp", vec![Operand::I64(*ind)]);
-                            },
-                            _ => { panic!("Invalid arguments for 'jmp' instruction ({:?}", vector); }
-                        }
-                    },
-                    "pop" => {
-                        match vector.as_slice() {
-                            [Argument::Variable(ind)] => {
-                                code.push("popv", vec![Operand::I64(*ind)]);
-                            },
-                            _ => { panic!("Invalid arguments for 'pop' instruction ({:?}", vector); }
-                        }
-                    },
-                    "print" => {
-                        match vector.as_slice() {
-                            [Argument::Stack] => {
-                                code.push("print_s", vec![]);
-                            },
-                            _ => { panic!("Invalid arguments for 'print' instruction ({:?}", vector); }
-                        }
-                    }
-                    _ => {
-                        code.push(name, vec![]);
-                    }
-                }
-            },
-            Statement::Declaration(index, literal) => {
-                constants_list[index as usize] = literal;
-            },
-            Statement::Label(index) => {
-                code.label(index.to_string().as_str());
-            }
-        }
-
-    }
-
-    (code, constants_list)
-
-}
-
-pub fn test() {
-
-    use std::fs::File;
-    use std::io::Read;
-
-    let mut file = File::open(".\\docs\\sample_code.txt").unwrap();
-
-    let mut source = String::new();
-
-    file.read_to_string(&mut source);
-
-    let ins = get_instructions();
-
-    let (build, _) = compile_source(source.as_str(), &ins);
-
 
 }

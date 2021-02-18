@@ -48,40 +48,47 @@ impl Host {
         }
     }
 
-    pub fn test_participant_event(& mut self, endpoint: Endpoint) {
+    pub fn test_participant_event(& mut self, prime: i64) {
 
-        use crate::compiler::compile_source;
+        let participant_count = self.participants.len();
 
-        self.event_queue.sender().send(Event::SendData(endpoint,
-        vec![Operand::I64(173), Operand::I64(10), Operand::I64(50)]
-        ));
+        if participant_count == 1 {
+            use crate::compiler::Compiler;
 
-        let table = get_instructions();
-        let mut builder = stack_vm::Builder::new(&table);
-        builder.push("pushdl", vec![Operand::I64(0)]);
-        builder.push("pushdl", vec![Operand::I64(1)]);
-        builder.push("add", vec![]);
+            let table = get_instructions();
 
-        use std::fs::File;
-        use std::io::Read;
+            let upper: usize = (prime as f64).sqrt() as usize;
+            let width: usize = (upper - 1) / participant_count;
 
-        let mut file = File::open(".\\docs\\sample_code.txt").unwrap();
+            println!("upp: {}", upper - 1);
 
-        let mut source = String::new();
+            //get the code from a file
+            let (builder, cons) = Compiler::compile_file(".\\docs\\sample_code.txt", &table);
 
-        file.read_to_string(&mut source);
+            for (i, endpoint) in self.participants.iter().enumerate() {
+                if i == participant_count - 1
+                {
+                    self.event_queue.sender().send(Event::SendData(*endpoint,
+                                                                   vec![Operand::I64(prime), Operand::I64((2 + width * i) as i64), Operand::I64((2 + width * (i + 1)) as i64)]
+                    ));
+                } else {
+                    self.event_queue.sender().send(Event::SendData(*endpoint,
+                                                                   vec![Operand::I64(prime), Operand::I64((2 + width * i) as i64), Operand::I64((2 + width * (i + 1) + ((upper - 1) % participant_count)) as i64)]
+                    ));
+                }
 
-        let (builder, cons) = compile_source(source.as_str(), &table);
 
-        self.event_queue.sender().send(Event::SendCode(endpoint, SerdeCodeOperand::from(builder)));
-
-
-
+                self.event_queue.sender().send(
+                    Event::SendCode(*endpoint, SerdeCodeOperand::from(builder.clone())));
+            }
+        }
 
 
     }
 
     pub fn check_events(& mut self) {
+
+
 
 
         match self.event_queue.receive() {
@@ -95,8 +102,7 @@ impl Host {
                             println!("    Register participant");
                             self.participants.insert(endpoint);
 
-
-                            self.test_participant_event(endpoint);
+                            self.test_participant_event(		413158511);
 
                             println!("Set: {:?}", self.participants);
                         },

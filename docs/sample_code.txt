@@ -7,10 +7,13 @@
     mov $divisor [1]
     mov $upper [2]
 
+    print $divisor
+    print $upper
+
 start:
     push $suspect       #
     push $divisor       #
-    print $stack
+    #print $stack
     mod                 # Divide the suspected prime by the next divisor
     jz finished         # If it divides, end the search
     push $divisor

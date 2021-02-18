@@ -5,6 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a3f319ce-e5c8-4c19-bebc-65d775750dda" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/readme.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
@@ -13,7 +14,6 @@
       <change beforePath="$PROJECT_DIR$/src/compiler.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/compiler.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/host.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/host.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/instructions.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/instructions.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/participant.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/participant.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -166,7 +166,7 @@
       </method>
     </configuration>
     <configuration name="Debug Host" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run -- --mode=host --address=127.0.0.1:3000" />
+      <option name="command" value="run -- --mode=host --address=192.168.1.166:3000" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
@@ -181,7 +181,37 @@
       </method>
     </configuration>
     <configuration name="Debug Participant (1)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run -- --mode=participant --address=127.0.0.1:3000" />
+      <option name="command" value="run -- --mode=participant --address=192.168.1.166:3000" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
+      <option name="backtrace" value="SHORT" />
+      <envs />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Debug Participant (2)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+      <option name="command" value="run -- --mode=participant --address=192.168.1.166:3000" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
+      <option name="backtrace" value="SHORT" />
+      <envs />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Debug Participant (3)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+      <option name="command" value="run -- --mode=participant --address=192.168.1.166:3000" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
@@ -196,7 +226,7 @@
       </method>
     </configuration>
     <configuration name="Debug Participant" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run -- --mode=participant --address=127.0.0.1:3000" />
+      <option name="command" value="run -- --mode=participant --address=192.168.1.166:3000" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
@@ -225,6 +255,15 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
+    <list>
+      <item itemvalue="Cargo.Debug Host" />
+      <item itemvalue="Cargo.Debug Participant" />
+      <item itemvalue="Cargo.Debug Participant (1)" />
+      <item itemvalue="Cargo.Debug Participant (2)" />
+      <item itemvalue="Cargo.Debug Participant (3)" />
+      <item itemvalue="Cargo.Release" />
+      <item itemvalue="Cargo.Debug Help" />
+    </list>
   </component>
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />

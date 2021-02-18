@@ -3,24 +3,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## Archive
-Unfortunately, due to the extremely slow nature of the vm (just one loop of the very simple sample_code example takes about 1/6th of a second) this project will now longer be updated. 
-Possible actions to alleviate this include:
-- Investigating the stack_vm code and the sample_code to identfy the issue
-- Migrating from a virtual machine a native binary via llvm.
-
-The first idea will take a lot of time to investigate (perhaps more than it is with) and the second idea has issues as well such as
-- Adding our own custom features to the language becomes more difficult
-- The developer must now be concerned about OS compatibility (not an issue with the VM)
-- Using the llvm interpreter or a native binary requires code be executed in a separate process. Communicating with this process is cumbersome and OS dependent.
-
-While this project is no longer viable (there exist other distributed computing solutions) it has been a very useful and informative project for the author.
-
 ## [Unreleased]
 ### To Do
 - Add instructions (including loads of useful maths functions, bitwise functions)
-- Make sure all bytecode is appended with the 'stop' label
-- Add readme for project and modify stack_vm readme to outline changes
+- Make sure all bytecode is appended with the 'stop' label (with an index of -1 to avoid conflicts)
 - Find a way dynamically generate certain repetitive code based on xml or json. Candidates include:
   - List of instructions (created in get_instructions)
   - List of pre-defined constants (created in get_constants)
@@ -28,12 +14,30 @@ While this project is no longer viable (there exist other distributed computing 
 - Modify float_reg to allow lack of leading zero, such as '.3' and exponents such as '0.3e4' still making sure we do not allow integers
 - Implement error handling for compiler.rs (go over unpack and expect first)
 - Make sure the constants table we generate doesn't conflict with the predefined constants
+- Use a TUI in host.rs to allow user to view the participants, their status, send data, code and commands.
 
 ### Unfinished Ideas
 - Think of a way to handle data sent from participant to host.
   - Where should it be saved on the computer?
   - How should it be serialised
 - Do the constants, label and variable maps need to be maps? can't they just be lists?
+
+## [0.1.8] - 2021-02-18
+### Fixed
+- Timeout on event_queue receive_timeout is reduced to 1micro second to speed up vm. This event is executed very quickly, and really only servers to check if an event has been sent
+- Cleared various 'unused import' warnings
+
+### Added
+- Host::test_participant_event now works for an arbitrary number of participants
+- Added readme
+- Added print_v for printing contents of variables
+- Added compile_file function
+
+### Changed
+- compile_file and compile_source added to Compiler impl
+
+### Removed
+- Removed test() function in compiler.rs
 
 ## [0.1.7] - 2021-02-17
 ### Added
