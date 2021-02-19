@@ -1,6 +1,6 @@
 [package]
 name = "midas"
-version = "0.1.8"
+version = "0.2.0"
 authors = ["ray33ee <30669752+ray33ee@users.noreply.github.com>"]
 edition = "2018"
 
@@ -12,9 +12,4 @@ message-io = "0.6.0"
 serde = "1.0.1"
 clap = "2.33.3"
 ipaddress = "0.1.1"
-stack-vm = "1.0.2"
-regex = "1"
-lazy_static = "1.4.0"
-
-[patch.crates-io]
-stack-vm = { path = "E:\\Software Projects\\IntelliJ\\stack-vm" }
+hlua = "0.4.1"

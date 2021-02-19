@@ -1,16 +1,11 @@
-mod operand;
-mod instructions;
 mod host;
 mod participant;
 mod messages;
-mod compiler;
 
 
-#[macro_use] extern crate lazy_static;
 extern crate clap;
 
 use clap::{crate_version, Arg, App};
-use crate::instructions::{get_instructions, get_constants};
 
 fn main() {
 
@@ -42,6 +37,13 @@ fn main() {
                     }
                 )
             .required(true))
+        .arg(Arg::with_name("Lua script")
+            .short("s")
+            .long("script")
+            .takes_value(true)
+            .help("Lua script to run")
+            .validator(|value| Ok(()))
+            .required(true))
         .get_matches();
 
     let ip_address = matches.value_of("socket address").unwrap();
@@ -49,20 +51,23 @@ fn main() {
     match matches.value_of("mode").unwrap() {
         "host" => {
             let mut host = host::Host::new(ip_address);
+
+            host.add_code(matches.value_of("Lua script").unwrap());
+
+
+
             loop {
                 host.check_events();
             }
         },
         "participant" => {
 
-            let constants = get_constants();
-            let instructions = get_instructions();
 
             let mut participant = participant::Participant::new(ip_address);
 
 
             loop {
-                participant.check_events(&constants, &instructions);
+                participant.check_events();
             }
 
         },

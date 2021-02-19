@@ -1,14 +1,13 @@
 
-use crate::instructions::SerdeCode;
-use crate::operand::Operand;
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Message {
     /* Host to participant */
 
-    Code(SerdeCode<Operand>),
-    VectorHTP(Vec<Operand>),
+    Code(String),
+    VectorHTP(Vec<f64>),
+    Execute,
 
     Play,
     Pause,
@@ -16,7 +15,9 @@ pub enum Message {
 
     /* Participant to Host */
 
-    VectorPTH(Vec<Operand>),
+    VectorPTH(Vec<f64>),
+
+    Progress(f32),
 
     Register,
     Unregister

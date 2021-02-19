@@ -5,22 +5,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### To Do
-- Add instructions (including loads of useful maths functions, bitwise functions)
-- Make sure all bytecode is appended with the 'stop' label (with an index of -1 to avoid conflicts)
-- Find a way dynamically generate certain repetitive code based on xml or json. Candidates include:
-  - List of instructions (created in get_instructions)
-  - List of pre-defined constants (created in get_constants)
-  - Pre-defined constant map (created in get_constants_map)
-- Modify float_reg to allow lack of leading zero, such as '.3' and exponents such as '0.3e4' still making sure we do not allow integers
-- Implement error handling for compiler.rs (go over unpack and expect first)
-- Make sure the constants table we generate doesn't conflict with the predefined constants
+- Implement error handling for hlua calls
 - Use a TUI in host.rs to allow user to view the participants, their status, send data, code and commands.
+- Implement split function that can be used by Lua script to split data up for each participant
+- Add validator for --script option
+- Update readme to show new changes, and explain Lua functions (generate_data, execute_code and interpret_results) and Lua globals (results and global_data)
 
 ### Unfinished Ideas
-- Think of a way to handle data sent from participant to host.
-  - Where should it be saved on the computer?
-  - How should it be serialised
-- Do the constants, label and variable maps need to be maps? can't they just be lists?
+- rlua or hlua?
+- Implement play/pause/stop
+- Implement progress function
+- Instead of passing Vec<f64> between host and participant, figure out how to serialise Lua Tables and send those
+
+## [0.2.0] - 2021-02-19
+### Removed
+- stack_vm has been removed in favor of a Lua script
+  
+### Added
+- Clap now accepts a --script command line argument
+- hlua which handles the Lua compiling
+- Host and Participants now call their function from the Lua script  
+- interpret_results now returns a string
+- Simple prime divisibility algorithm implemented as test Lua script
+
+### Changed
+- Certain Send events (within the host) now send data/code to all endpoints. 
+  NOTE: This may change in the future.
+- Code loading and execution now two separate events
+- Host contains data field containing all data sent from all participants (created by each participants execution of execute_code)
 
 ## [0.1.8] - 2021-02-18
 ### Fixed

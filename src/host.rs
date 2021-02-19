@@ -1,5 +1,4 @@
 use crate::messages::Message;
-use crate::instructions::SerdeCodeOperand;
 
 use message_io::network::Endpoint;
 
@@ -7,26 +6,31 @@ use std::collections::HashSet;
 
 use message_io::events::{EventQueue};
 use message_io::network::{Network, NetEvent, Transport};
-use crate::instructions::get_instructions;
 
-use crate::operand::Operand;
+use hlua::{Lua, AnyLuaValue, LuaTable};
+use std::io::Read;
 
 enum Event {
     Network(NetEvent<Message>),
-    SendCode(Endpoint, SerdeCodeOperand),
-    SendData(Endpoint, Vec<Operand>),
+    SendCode(String),
+    SendData,
     Pause(Endpoint),
     Play(Endpoint),
     Stop(Endpoint),
+    Execute
 }
 
-pub struct Host {
+pub struct Host<'a> {
     participants: HashSet<Endpoint>,
     event_queue: EventQueue<Event>,
-    network: Network
+    network: Network,
+
+    data: (Vec<f64>, usize),
+
+    lua: Lua<'a>
 }
 
-impl Host {
+impl<'a> Host<'a> {
 
     pub fn new(server_address: &str) -> Self {
 
@@ -36,6 +40,10 @@ impl Host {
 
         let mut network = Network::new(move |net_event| network_sender.send(Event::Network(net_event)));
 
+        let mut lua = Lua::new();
+
+        lua.openlibs();
+
         match network.listen(Transport::Tcp, server_address) {
             Ok(_) => println!("TCP Server running at {}", server_address),
             Err(_) => panic!("Can not listening at {}", server_address)
@@ -44,46 +52,47 @@ impl Host {
         Host {
             participants: HashSet::new(),
             event_queue,
-            network
+            network,
+            data: (Vec::new(), 0),
+            lua
         }
     }
 
-    pub fn test_participant_event(& mut self, prime: i64) {
+    pub fn add_code(& mut self, path: & str) {
+        // Get source code
 
-        let participant_count = self.participants.len();
+        use std::fs::File;
 
-        if participant_count == 1 {
-            use crate::compiler::Compiler;
+        let mut fh = File::open(path).unwrap();
 
-            let table = get_instructions();
+        let mut source_code = String::new();
 
-            let upper: usize = (prime as f64).sqrt() as usize;
-            let width: usize = (upper - 1) / participant_count;
+        fh.read_to_string(& mut source_code);
 
-            println!("upp: {}", upper - 1);
-
-            //get the code from a file
-            let (builder, cons) = Compiler::compile_file(".\\docs\\sample_code.txt", &table);
-
-            for (i, endpoint) in self.participants.iter().enumerate() {
-                if i == participant_count - 1
-                {
-                    self.event_queue.sender().send(Event::SendData(*endpoint,
-                                                                   vec![Operand::I64(prime), Operand::I64((2 + width * i) as i64), Operand::I64((2 + width * (i + 1)) as i64)]
-                    ));
-                } else {
-                    self.event_queue.sender().send(Event::SendData(*endpoint,
-                                                                   vec![Operand::I64(prime), Operand::I64((2 + width * i) as i64), Operand::I64((2 + width * (i + 1) + ((upper - 1) % participant_count)) as i64)]
-                    ));
-                }
-
-
-                self.event_queue.sender().send(
-                    Event::SendCode(*endpoint, SerdeCodeOperand::from(builder.clone())));
-            }
+        match self.lua.execute::<()>(source_code.as_str()) {
+            Ok(_) => {}
+            Err(e) => { panic!("LuaError: {:?}", e); }
         }
 
 
+    }
+
+    pub fn test_participant_event(& mut self) {
+        if self.participants.len() == 1 {
+            self.event_queue.sender().send(Event::SendData);
+
+            use std::fs::File;
+
+            let mut fh = File::open(".\\docs\\sample_code.lua").unwrap();
+
+            let mut source_code = String::new();
+
+            fh.read_to_string(& mut source_code);
+
+            self.event_queue.sender().send(Event::SendCode(source_code));
+
+            self.event_queue.sender().send(Event::Execute);
+        }
     }
 
     pub fn check_events(& mut self) {
@@ -102,17 +111,47 @@ impl Host {
                             println!("    Register participant");
                             self.participants.insert(endpoint);
 
-                            self.test_participant_event(		413158511);
+                            self.test_participant_event();
 
                             println!("Set: {:?}", self.participants);
+
                         },
                         Message::Unregister => {
                             self.participants.remove(&endpoint);
                         },
-                        Message::VectorPTH(data) => {
+                        Message::VectorPTH(mut data) => {
                             //Save data to computer path using endpoint and time and date as file name
 
                             println!("Data received: {:?}", data);
+                            self.data.0.append(& mut data);
+                            self.data.1 += 1;
+
+                            // Test to see if all participants have finished
+                            if self.participants.len() == self.data.1 {
+                                {
+                                    //Create global array called 'results'
+                                    let mut arr = self.lua.empty_array("results");
+
+                                    // Copy data to results
+                                    for (i, value) in self.data.0.iter().enumerate() {
+                                        arr.set((i + 1) as i32, *value);
+                                    }
+                                }
+                                // Execute 'interpret_results' function
+                                let mut interpret_results: hlua::LuaFunction<_> = self.lua.get("interpret_results").unwrap();
+
+                                println!("Here!");
+
+                                // Get return value
+                                let return_code: String = interpret_results.call().unwrap();
+
+                                println!("Return code: {}", return_code);
+
+                                self.data.0.clear();
+                                self.data.1 = 0;
+                            }
+
+
                         },
                         _ => {
                             panic!("Invalid message received by host ({:?})", message);
@@ -133,11 +172,32 @@ impl Host {
                 }
                 NetEvent::DeserializationError(_) => (),
             },
-            Event::SendCode(endpoint, code) => {
-                self.network.send(endpoint, Message::Code(code));
+            Event::SendCode(  code) => {
+
+                for endpoint in self.participants.iter() {
+                    self.network.send(*endpoint, Message::Code(code.clone()));
+                }
+
             },
-            Event::SendData(endpoint, data) => {
-                self.network.send(endpoint, Message::VectorHTP(data));
+            Event::SendData => {
+
+                //Extract the 'generate data' function from the Lua script.
+                let mut generate_data: hlua::LuaFunction<_> = self.lua.get("generate_data").unwrap();
+
+                let endpoint_count = self.participants.len();
+
+
+                //Call generate_data function for each endpoint, and send the resultant data
+                for (i, endpoint) in self.participants.iter().enumerate() {
+                    let mut result: LuaTable<_> = generate_data.call_with_args((i as i32, endpoint_count as i32)).unwrap();
+
+                    let list: Vec<f64> = result.iter::<i32, f64>().map(|pair| pair.unwrap().1).collect();
+
+                    println!("{}", list.len());
+
+                    self.network.send(*endpoint, Message::VectorHTP(list));
+                }
+
             },
             Event::Pause(endpoint) => {
                 self.network.send(endpoint, Message::Pause);
@@ -147,7 +207,12 @@ impl Host {
             },
             Event::Stop(endpoint) => {
                 self.network.send(endpoint, Message::Stop);
-            }
+            },
+            Event::Execute => {
+                for endpoint in self.participants.iter() {
+                    self.network.send(*endpoint, Message::Execute);
+                }
+            },
         }
 
 
