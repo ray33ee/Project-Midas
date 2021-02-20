@@ -10,7 +10,6 @@
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/changelog.md" beforeDir="false" afterPath="$PROJECT_DIR$/changelog.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/sample_code.lua" beforeDir="false" afterPath="$PROJECT_DIR$/docs/sample_code.lua" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/readme.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/host.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/host.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/messages.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/messages.rs" afterDir="false" />
@@ -152,9 +151,9 @@
       <recent name="E:\Software Projects\IntelliJ\midas\stack_vm\src" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Debug Participant (1)">
+  <component name="RunManager" selected="Cargo.Debug Participant">
     <configuration name="Debug Help" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run -- -h" />
+      <option name="command" value="run -- -h host" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
@@ -169,7 +168,7 @@
       </method>
     </configuration>
     <configuration name="Debug Host" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run -- --mode=host --address=192.168.1.166:3000 --script=&quot;.\docs\sample_code.lua&quot;" />
+      <option name="command" value="run --  --address=192.168.1.166:3000  host  --script=&quot;.\docs\sample_code.lua&quot; " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
@@ -184,7 +183,7 @@
       </method>
     </configuration>
     <configuration name="Debug Participant (1)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run -- --mode=participant --address=192.168.1.166:3000 --script=&quot;.\docs\sample_code.lua&quot;" />
+      <option name="command" value="run -- --address=192.168.1.166:3000 participant " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
@@ -199,7 +198,7 @@
       </method>
     </configuration>
     <configuration name="Debug Participant (2)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run -- --mode=participant --address=192.168.1.166:3000 --script=&quot;.\docs\sample_code.lua&quot;" />
+      <option name="command" value="run -- --address=192.168.1.166:3000 participant " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
@@ -214,7 +213,7 @@
       </method>
     </configuration>
     <configuration name="Debug Participant (3)" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run -- --mode=participant --address=192.168.1.166:3000 --script=&quot;.\docs\sample_code.lua&quot;" />
+      <option name="command" value="run -- --address=192.168.1.166:3000 participant " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
@@ -229,7 +228,7 @@
       </method>
     </configuration>
     <configuration name="Debug Participant" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run -- --mode=participant --address=192.168.1.166:3000 --script=&quot;.\docs\sample_code.lua&quot;" />
+      <option name="command" value="run -- --address=192.168.1.166:3000 participant " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
@@ -317,6 +316,9 @@
       <window_info anchor="right" id="Palette&#9;" order="8" />
       <window_info anchor="right" id="Run" order="9" weight="0.35626668" />
     </layout>
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.lua" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

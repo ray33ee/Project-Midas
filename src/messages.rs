@@ -21,6 +21,10 @@ pub enum Message {
 
     Progress(f32),
 
+    ParticipantError(String),
+
+    Whisper(String),
+
     Register,
     Unregister
 }

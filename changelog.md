@@ -5,17 +5,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### To Do
-- Implement error handling for hlua calls
 - Use a TUI in host.rs to allow user to view the participants, their status, send data, code and commands.
 - Implement split function that can be used by Lua script to split data up for each participant
-- Add validator for --script option
-- Running with --mode=participant should not require --script option
+- Send data, code and execute should be combined. This is to avoid participants being after data has been sent, which would cause issues.
+  - What other steps are needed to avoid this issue?
+- Use Rust log for event logging with TUI
+- Implement error handling for Host code showing messages via TUI
 
 ### Unfinished Ideas
 - rlua or hlua?
 - Implement play/pause/stop
 - Implement progress function
 - Can we use `AnyLuaValue` type to store tables?
+
+## [0.2.2] - 2021-02-20
+### Added
+- Host and participant selection via clap now uses subcommands, and --script option is only required for host subcommand
+- --script validator added
+- Error handling implemented for participant
+- Extra messages added for sending strings from participant to host
+
+### Fixed
+- Various warnings cleared (Pause, play and stop warnings still exist as these are not yet implemented)
 
 ## [0.2.1] - 2021-02-20
 ### Added

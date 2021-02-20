@@ -6,9 +6,7 @@ use message_io::events::{EventQueue};
 use message_io::network::{Network, NetEvent, Transport};
 
 use hlua::{Lua, LuaTable, AnyLuaValue};
-use hlua::ffi::lua_absindex;
-
-use crate::lua::SerdeLuaTable;
+use crate::messages::Message::ParticipantError;
 
 enum Event {
     Network(NetEvent<Message>)
@@ -69,7 +67,10 @@ impl<'a> Participant<'a> {
 
                             match self.lua.execute::<()>(code.as_str()) {
                                 Ok(_) => {}
-                                Err(e) => { panic!("LuaError: {:?}", e); }
+                                Err(e) => {
+                                    self.network.send(self.host_endpoint, Message::ParticipantError(String::from(format!("LuaError on receive Message::Code - {:?}", e))));
+                                    panic!("LuaError on receive Message::Code - {:?}", e);
+                                }
                             }
 
                         },
@@ -78,7 +79,7 @@ impl<'a> Participant<'a> {
                             let mut arr = self.lua.empty_array("global_data");
 
 
-                            for (i, value) in data.iter().enumerate() {
+                            for (_, value) in data.iter().enumerate() {
                                 arr.set(value.0.clone(), value.1.clone());
                             }
 
@@ -95,17 +96,33 @@ impl<'a> Participant<'a> {
                         },
                         Message::Execute => {
 
-                            let mut generate_data: hlua::LuaFunction<_> = self.lua.get("execute_code").unwrap();
+                            match self.lua.get::<hlua::LuaFunction<_>, _>("execute_code")
+                            {
+                                Some (mut generate_data) => {
+                                    match generate_data.call::<LuaTable<_>>() {
+                                        Ok(mut result) => {
+                                            let list: crate::lua::SerdeLuaTable = result.iter::<AnyLuaValue, AnyLuaValue>().map(|pair| pair.unwrap()).collect();
+
+                                            self.network.send(self.host_endpoint, Message::VectorPTH(list));
+                                        }
+                                        Err(e) => {
+                                            self.network.send(self.host_endpoint, Message::ParticipantError(String::from(format!("LuaError on receive Message::Execute - {:?}", e))));
+                                            panic!("LuaError on receive Message::Execute - {:?}", e);
+                                        }
+                                    };
+                                },
+                                None => {
+                                    self.network.send(self.host_endpoint, Message::ParticipantError(String::from("LuaError on receive Message::Execute - Function 'execute_code' does not exist.")));
+                                    panic!("LuaError on receive Message::Execute - Function 'execute_code' does not exist.");
+                                }
+                            }
 
 
                             //Call generate_data function for each endpoint, and send the resultant data
-                            let mut result: LuaTable<_> = generate_data.call().unwrap();
-
-                            let list: crate::lua::SerdeLuaTable = result.iter::<AnyLuaValue, AnyLuaValue>().map(|pair| pair.unwrap()).collect();
 
 
 
-                            self.network.send(self.host_endpoint, Message::VectorPTH(list));
+
 
                             }
                         _ => { /*panic!("Invalid message {:?}", message);*/ }

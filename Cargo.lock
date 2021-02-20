@@ -195,6 +195,7 @@ dependencies = [
 [[package]]
 name = "hlua"
 version = "0.4.1"
+source = "git+https://github.com/ray33ee/hlua#13989ad42decfab172599803d327419e3d725653"
 dependencies = [
  "libc",
  "lua52-sys",
@@ -239,6 +240,7 @@ dependencies = [
 [[package]]
 name = "lua52-sys"
 version = "0.1.2"
+source = "git+https://github.com/ray33ee/hlua#13989ad42decfab172599803d327419e3d725653"
 dependencies = [
  "cc",
  "libc",
@@ -278,7 +280,7 @@ dependencies = [
 
 [[package]]
 name = "midas"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "clap",
  "hlua",
