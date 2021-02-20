@@ -9,30 +9,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Use a TUI in host.rs to allow user to view the participants, their status, send data, code and commands.
 - Implement split function that can be used by Lua script to split data up for each participant
 - Add validator for --script option
-- Update readme to show new changes, and explain Lua functions (generate_data, execute_code and interpret_results) and Lua globals (results and global_data)
+- Running with --mode=participant should not require --script option
 
 ### Unfinished Ideas
 - rlua or hlua?
 - Implement play/pause/stop
 - Implement progress function
-- Instead of passing Vec<f64> between host and participant, figure out how to serialise Lua Tables and send those
+- Can we use `AnyLuaValue` type to store tables?
+
+## [0.2.1] - 2021-02-20
+### Added
+- We now work with `SerdeLuaTable`, `Vec<(AnyLuaValue, AnyLuaValue)>`, to allow user to pass tables between host and participant
+- Modified host code so that the results global variable (used by `interpret_results`) is now an array of tables, each table coming from a participant
+- Added lua.rs to handle common hlua (or rlua) code
+
+### Changed
+- Modified `AnyLuaValue` to be serializable 
+
+## Removed
+- We no longer store the incoming data in Host as it is sent directly to Lua context
 
 ## [0.2.0] - 2021-02-19
 ### Removed
-- stack_vm has been removed in favor of a Lua script
+- `stack_vm` has been removed in favor of a Lua script
   
 ### Added
 - Clap now accepts a --script command line argument
 - hlua which handles the Lua compiling
 - Host and Participants now call their function from the Lua script  
-- interpret_results now returns a string
+- `interpret_results` now returns a string
 - Simple prime divisibility algorithm implemented as test Lua script
 
 ### Changed
 - Certain Send events (within the host) now send data/code to all endpoints. 
   NOTE: This may change in the future.
 - Code loading and execution now two separate events
-- Host contains data field containing all data sent from all participants (created by each participants execution of execute_code)
+- Host contains data field containing all data sent from all participants (created by each participants execution of `execute_code`)
 
 ## [0.1.8] - 2021-02-18
 ### Fixed

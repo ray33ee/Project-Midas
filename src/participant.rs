@@ -5,8 +5,10 @@ use message_io::network::Endpoint;
 use message_io::events::{EventQueue};
 use message_io::network::{Network, NetEvent, Transport};
 
-use hlua::{Lua, LuaTable};
+use hlua::{Lua, LuaTable, AnyLuaValue};
 use hlua::ffi::lua_absindex;
+
+use crate::lua::SerdeLuaTable;
 
 enum Event {
     Network(NetEvent<Message>)
@@ -77,7 +79,7 @@ impl<'a> Participant<'a> {
 
 
                             for (i, value) in data.iter().enumerate() {
-                                arr.set((i+1) as i32, *value);
+                                arr.set(value.0.clone(), value.1.clone());
                             }
 
                         },
@@ -99,7 +101,7 @@ impl<'a> Participant<'a> {
                             //Call generate_data function for each endpoint, and send the resultant data
                             let mut result: LuaTable<_> = generate_data.call().unwrap();
 
-                            let list: Vec<f64> = result.iter::<i32, f64>().map(|pair| pair.unwrap().1).collect();
+                            let list: crate::lua::SerdeLuaTable = result.iter::<AnyLuaValue, AnyLuaValue>().map(|pair| pair.unwrap()).collect();
 
 
 

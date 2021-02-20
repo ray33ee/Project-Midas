@@ -9,13 +9,11 @@
       <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/changelog.md" beforeDir="false" afterPath="$PROJECT_DIR$/changelog.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/sample_code.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/compiler.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/sample_code.lua" beforeDir="false" afterPath="$PROJECT_DIR$/docs/sample_code.lua" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/readme.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/host.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/host.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/instructions.rs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/messages.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/messages.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/operand.rs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/participant.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/participant.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -154,7 +152,7 @@
       <recent name="E:\Software Projects\IntelliJ\midas\stack_vm\src" />
     </key>
   </component>
-  <component name="RunManager" selected="Cargo.Debug Participant">
+  <component name="RunManager" selected="Cargo.Debug Participant (1)">
     <configuration name="Debug Help" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
       <option name="command" value="run -- -h" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />

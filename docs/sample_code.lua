@@ -9,8 +9,8 @@ function generate_data(endpoint_index, endpoint_count)
 	width = math.floor((upper - 2) / endpoint_count)
 
 
-	data[1] = width * endpoint_index + 2
-	data[2] = data[1] + width - 1
+	data["lower"] = width * endpoint_index + 2
+	data["upper"] = data["lower"] + width - 1
 
 	return data
 
@@ -20,33 +20,35 @@ function execute_code()
 
 	participant_result = {}
 
-	lower = global_data[1]
-	upper = global_data[2]
+	lower = global_data["lower"]
+	upper = global_data["upper"]
+
+	participant_result["lower"] = lower
+	participant_result["upper"] = upper
 
 	for i = lower,upper,1
 	do
 		if (prime % i == 0 )
 		then
-			participant_result[1] = i
+			participant_result["divisor"] = i
 			return participant_result
 
 		end
 
 	end
 
-	participant_result[1] = 0
+	participant_result["divisor"] = 0
 
 	return participant_result
 
 end
 
 function interpret_results()
-	for i,v in ipairs(results)
+	for i,v in pairs(results)
 	do
-		if (v ~= 0)
-		then
-			return "The number is not prime (divisible by " .. v .. ")."
-		end
+	    print("index: " ..i)
+	    for j,w in pairs(v) do print("pair: " ..j.. " " .. w) end
+
 	end
 	return "The number is prime."
 end

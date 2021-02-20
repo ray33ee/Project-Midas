@@ -10,6 +10,8 @@ use message_io::network::{Network, NetEvent, Transport};
 use hlua::{Lua, AnyLuaValue, LuaTable};
 use std::io::Read;
 
+use crate::lua::SerdeLuaTable;
+
 enum Event {
     Network(NetEvent<Message>),
     SendCode(String),
@@ -25,7 +27,7 @@ pub struct Host<'a> {
     event_queue: EventQueue<Event>,
     network: Network,
 
-    data: (Vec<f64>, usize),
+    participants_finished: usize,
 
     lua: Lua<'a>
 }
@@ -53,7 +55,7 @@ impl<'a> Host<'a> {
             participants: HashSet::new(),
             event_queue,
             network,
-            data: (Vec::new(), 0),
+            participants_finished: 0,
             lua
         }
     }
@@ -78,7 +80,7 @@ impl<'a> Host<'a> {
     }
 
     pub fn test_participant_event(& mut self) {
-        if self.participants.len() == 1 {
+        if self.participants.len() == 2 {
             self.event_queue.sender().send(Event::SendData);
 
             use std::fs::File;
@@ -120,35 +122,42 @@ impl<'a> Host<'a> {
                             self.participants.remove(&endpoint);
                         },
                         Message::VectorPTH(mut data) => {
-                            //Save data to computer path using endpoint and time and date as file name
 
-                            println!("Data received: {:?}", data);
-                            self.data.0.append(& mut data);
-                            self.data.1 += 1;
+                            //A participant has finished, so increment the count
+                            self.participants_finished += 1;
+
+                            //If this is the first participant, initialise the results variable
+                            if self.participants_finished ==  1 {
+                                let mut arr = self.lua.empty_array("results");
+                            }
+
+                            {
+                                //Create temporary global array called 'tmp_table'
+                                let mut arr = self.lua.empty_array("tmp_table");
+
+                                // Copy data to temporary array
+                                for (i , value) in data.iter().enumerate() {
+                                    arr.set(value.0.clone(), value.1.clone());
+                                }
+
+
+                            }
+
+                            //Move the temporary table to to the global results
+                            self.lua.execute::<()>(format!("results[{}] = tmp_table", self.participants_finished).as_str());
 
                             // Test to see if all participants have finished
-                            if self.participants.len() == self.data.1 {
-                                {
-                                    //Create global array called 'results'
-                                    let mut arr = self.lua.empty_array("results");
+                            if self.participants.len() == self.participants_finished {
 
-                                    // Copy data to results
-                                    for (i, value) in self.data.0.iter().enumerate() {
-                                        arr.set((i + 1) as i32, *value);
-                                    }
-                                }
                                 // Execute 'interpret_results' function
                                 let mut interpret_results: hlua::LuaFunction<_> = self.lua.get("interpret_results").unwrap();
-
-                                println!("Here!");
 
                                 // Get return value
                                 let return_code: String = interpret_results.call().unwrap();
 
                                 println!("Return code: {}", return_code);
 
-                                self.data.0.clear();
-                                self.data.1 = 0;
+                                self.participants_finished = 0;
                             }
 
 
@@ -191,9 +200,9 @@ impl<'a> Host<'a> {
                 for (i, endpoint) in self.participants.iter().enumerate() {
                     let mut result: LuaTable<_> = generate_data.call_with_args((i as i32, endpoint_count as i32)).unwrap();
 
-                    let list: Vec<f64> = result.iter::<i32, f64>().map(|pair| pair.unwrap().1).collect();
+                    let list: SerdeLuaTable = result.iter::<AnyLuaValue, AnyLuaValue>().map(|pair| pair.unwrap()).collect();
 
-                    println!("{}", list.len());
+                    println!("Generated table: {:?}", list);
 
                     self.network.send(*endpoint, Message::VectorHTP(list));
                 }

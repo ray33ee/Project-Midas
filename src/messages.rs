@@ -1,12 +1,14 @@
 
 use serde::{Serialize, Deserialize};
 
+use crate::lua::SerdeLuaTable;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Message {
     /* Host to participant */
 
     Code(String),
-    VectorHTP(Vec<f64>),
+    VectorHTP(SerdeLuaTable),
     Execute,
 
     Play,
@@ -15,7 +17,7 @@ pub enum Message {
 
     /* Participant to Host */
 
-    VectorPTH(Vec<f64>),
+    VectorPTH(SerdeLuaTable),
 
     Progress(f32),
 

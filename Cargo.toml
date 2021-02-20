@@ -1,6 +1,6 @@
 [package]
 name = "midas"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["ray33ee <30669752+ray33ee@users.noreply.github.com>"]
 edition = "2018"
 
@@ -13,3 +13,6 @@ serde = "1.0.1"
 clap = "2.33.3"
 ipaddress = "0.1.1"
 hlua = "0.4.1"
+
+[patch.crates-io]
+hlua = { path = "E:\\Software Projects\\IntelliJ\\hlua-master\\hlua" }
