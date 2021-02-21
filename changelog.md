@@ -11,12 +11,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - What other steps are needed to avoid this issue?
 - Use Rust log for event logging with TUI
 - Implement error handling for Host code showing messages via TUI
+- When `host` receives a `ParticipantError` message, it must unregister the participant
+  - This will be done automatically when the participant panics and disconnects, but we do it here just to make sure
+    - Verify that double removal from a hashset/hashmap doesn't panic  
+  - Make sure that if a participant fails (i.e. sends the `ParticipantError` message) then `interpret_results` must NOT be called
+- Find a way to automatically figure out the 'optimal' number of threads to use (when using option --threads)
+- Implement a very simple command system for testing Midas before using a TUI.
 
 ### Unfinished Ideas
 - rlua or hlua?
 - Implement play/pause/stop
 - Implement progress function
 - Can we use `AnyLuaValue` type to store tables?
+  - Experiment with the `LuaArray` option to see if we can use this as a table
+
+## [0.2.3] - 2021-02-20
+### Added
+- Multithreading added, so multiple participants can be executed from a single process
+- Command line arguments for the number of threads to spawn and the name of participant(s)
+- `Host::participants` has been changed to a bidirectional map for easy insertion and deletion from either string name or the endpoint
+- If multiple threads are used, then the number of the thread (arbitrary) is appended to the --name to ensure each participant has a unique name
+- The participant name is now sent in the `Messages::Register` message
+- Host `Message` matching now includes arms for `ParticipantError` and `ParticipantWarning`
 
 ## [0.2.2] - 2021-02-20
 ### Added

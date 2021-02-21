@@ -2,7 +2,7 @@ use crate::messages::Message;
 
 use message_io::network::Endpoint;
 
-use std::collections::HashSet;
+use bimap::BiMap;
 
 use message_io::events::{EventQueue};
 use message_io::network::{Network, NetEvent, Transport};
@@ -24,7 +24,7 @@ enum Event {
 }
 
 pub struct Host<'a> {
-    participants: HashSet<Endpoint>,
+    participants: BiMap<String, Endpoint>,
     event_queue: EventQueue<Event>,
     network: Network,
 
@@ -53,7 +53,7 @@ impl<'a> Host<'a> {
         }
 
         Host {
-            participants: HashSet::new(),
+            participants: BiMap::new(),
             event_queue,
             network,
             participants_finished: 0,
@@ -107,16 +107,16 @@ impl<'a> Host<'a> {
                         println!("Message received");
 
                         match message {
-                            Message::Register => {
+                            Message::Register(name) => {
                                 println!("    Register participant");
-                                self.participants.insert(endpoint);
+                                self.participants.insert(name, endpoint);
 
                                 self.test_participant_event();
 
                                 println!("Set: {:?}", self.participants);
                             },
                             Message::Unregister => {
-                                self.participants.remove(&endpoint);
+                                self.participants.remove_by_right(&endpoint);
                             },
                             Message::VectorPTH(data) => {
 
@@ -155,6 +155,12 @@ impl<'a> Host<'a> {
                                     self.participants_finished = 0;
                                 }
                             },
+                            Message::ParticipantError(err) => {
+                                println!("Participant Error: {}", err);
+                            },
+                            Message::ParticipantWarning(err) => {
+                                println!("Participant Warning: {}", err);
+                            }
                             _ => {
                                 panic!("Invalid message received by host ({:?})", message);
                             }
@@ -167,13 +173,13 @@ impl<'a> Host<'a> {
                         //Client disconnected without unregistering
                         println!("Client Disconnected {:?}", endpoint);
 
-                        self.participants.remove(&endpoint);
+                        self.participants.remove_by_right(&endpoint);
                         println!("Set: {:?}", self.participants);
                     }
                     NetEvent::DeserializationError(_) => (),
                 },
                 Event::SendCode(code) => {
-                    for endpoint in self.participants.iter() {
+                    for (_name, endpoint) in self.participants.iter() {
                         self.network.send(*endpoint, Message::Code(code.clone()));
                     }
                 },
@@ -186,7 +192,7 @@ impl<'a> Host<'a> {
 
 
                     //Call generate_data function for each endpoint, and send the resultant data
-                    for (i, endpoint) in self.participants.iter().enumerate() {
+                    for (i, (_name, endpoint)) in self.participants.iter().enumerate() {
                         let mut result: LuaTable<_> = generate_data.call_with_args((i as i32, endpoint_count as i32)).unwrap();
 
                         let list: SerdeLuaTable = result.iter::<AnyLuaValue, AnyLuaValue>().map(|pair| pair.unwrap()).collect();
@@ -206,7 +212,7 @@ impl<'a> Host<'a> {
                     self.network.send(endpoint, Message::Stop);
                 },
                 Event::Execute => {
-                    for endpoint in self.participants.iter() {
+                    for (_name, endpoint) in self.participants.iter() {
                         self.network.send(*endpoint, Message::Execute);
                     }
                 },

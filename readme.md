@@ -52,3 +52,8 @@ This functions returns a string, which can be used to show a message indicating 
 ## Build
 
 Midas uses a modified version of hlua, so if you build Midas yourself you must modify hlua such that the structs `AnyLuaValue` and `AnyLuaString` are serde serializable and deserializable.
+
+## Host longevity
+
+Once a task is started, the host application must run at least until the partcipants have all stopped, it may not stop earlier. It is also important to mention that a node can host as well as participate by using different processes for the host. 
+This means that a dedicated Host node is not needed, and the host code can be run on any of the nodes.

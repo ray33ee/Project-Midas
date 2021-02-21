@@ -6,7 +6,6 @@ use message_io::events::{EventQueue};
 use message_io::network::{Network, NetEvent, Transport};
 
 use hlua::{Lua, LuaTable, AnyLuaValue};
-use crate::messages::Message::ParticipantError;
 
 enum Event {
     Network(NetEvent<Message>)
@@ -23,7 +22,7 @@ pub struct Participant<'a> {
 
 impl<'a> Participant<'a> {
 
-    pub fn new(server_address: &str) -> Self {
+    pub fn new(name: String, server_address: &str) -> Self {
 
         let mut event_queue = EventQueue::new();
 
@@ -36,9 +35,9 @@ impl<'a> Participant<'a> {
         lua.openlibs();
 
         if let Ok(host_endpoint) = network.connect(Transport::Tcp, server_address) {
-            println!("Connect to server by TCP at {}", server_address);
+            println!("Participant '{}' connected to host ({})", name, server_address);
 
-            network.send(host_endpoint, Message::Register);
+            network.send(host_endpoint, Message::Register(name.clone()));
 
             Participant {
                 host_endpoint,

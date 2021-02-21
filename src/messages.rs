@@ -22,9 +22,9 @@ pub enum Message {
     Progress(f32),
 
     ParticipantError(String),
-
+    ParticipantWarning(String),
     Whisper(String),
 
-    Register,
+    Register(String),
     Unregister
 }
