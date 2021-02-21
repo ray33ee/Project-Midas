@@ -1,4 +1,4 @@
-
+#![feature(available_concurrency)]
 #[macro_use]
 extern crate capture;
 
@@ -12,6 +12,8 @@ extern crate clap;
 use clap::{crate_version, Arg, App, SubCommand};
 use std::thread;
 
+use crossterm::event::{read, Event, poll};
+use std::time::Duration;
 
 fn main() {
 
@@ -83,9 +85,28 @@ fn main() {
         ("host", host_matches) => {
             let mut host = host::Host::new(ip_address.as_str());
 
-            host.add_code(host_matches.unwrap().value_of("Lua script").unwrap());
+            let script_path = host_matches.unwrap().value_of("Lua script").unwrap();
 
             loop {
+                if let Ok(true) = poll(Duration::from_secs(0)) {
+                    match read().unwrap() {
+                        Event::Key(key_event) => {
+                            match key_event.code {
+                                crossterm::event::KeyCode::Char('e') => {
+                                    host.start_participants(script_path);
+                                },
+                                crossterm::event::KeyCode::Char('d') => {
+                                    host.display_participants();
+                                },
+                                crossterm::event::KeyCode::Char('c') => {
+                                    host.display_participant_count();
+                                },
+                                _ => {}
+                            }
+                        }
+                        _ => {}
+                    }
+                }
                 host.check_events();
             }
         },
@@ -96,14 +117,14 @@ fn main() {
             //Integer containing the number of extra threads to spawn.
             //This can be written as spawn_thread_count = total_thread_count - 1
             //Since one of the total threads is the main thread, which is not spawned
-            let spawn_thread_count = if participant_matches.unwrap().is_present("thread count")
+            let spawn_thread_count: usize = if participant_matches.unwrap().is_present("thread count")
             {
                 match participant_matches.unwrap().value_of("thread count") {
                     Some(thread_count) => {
-                        thread_count.parse::<i32>().unwrap() - 1
+                        thread_count.parse::<usize>().unwrap() - 1
                     },
                     None => {
-                        7
+                        thread::available_concurrency().unwrap().get()
                     }
                 }
             }
@@ -115,13 +136,15 @@ fn main() {
 
             for i in 0..spawn_thread_count {
 
-                thread::spawn(capture!(clone participant_name, clone ip_address, clone i in move || {
+                thread::Builder::new().name(
+                    format!("thread_{}-{}", &participant_name, i)
+                ).spawn(capture!(clone participant_name, clone ip_address, clone i in move || {
                     let mut participant = participant::Participant::new(format!("{}-{}", participant_name, i), ip_address.as_str());
 
                     loop {
                         participant.check_events();
                     }
-                }));
+                })).unwrap();
             }
 
 

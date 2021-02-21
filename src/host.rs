@@ -29,6 +29,7 @@ pub struct Host<'a> {
     network: Network,
 
     participants_finished: usize,
+    participants_startedwith: BiMap<String, Endpoint>,
 
     lua: Lua<'a>
 }
@@ -49,7 +50,7 @@ impl<'a> Host<'a> {
 
         match network.listen(Transport::Tcp, server_address) {
             Ok(_) => println!("TCP Server running at {}", server_address),
-            Err(_) => panic!("Can not listening at {}", server_address)
+            Err(e) => panic!("Can not listen at {} - {}", server_address, e)
         }
 
         Host {
@@ -57,11 +58,12 @@ impl<'a> Host<'a> {
             event_queue,
             network,
             participants_finished: 0,
+            participants_startedwith: BiMap::new(),
             lua
         }
     }
 
-    pub fn add_code(& mut self, path: & str) {
+    /*pub fn add_code(& mut self, path: & str) {
         // Get source code
 
         use std::fs::File;
@@ -78,24 +80,38 @@ impl<'a> Host<'a> {
         }
 
 
+    }*/
+
+    pub fn start_participants(& mut self, path: &str) {
+
+        use std::fs::File;
+
+        let mut fh = File::open(path).unwrap();
+
+        let mut source_code = String::new();
+
+        fh.read_to_string(& mut source_code).unwrap();
+
+        match self.lua.execute::<()>(source_code.as_str()) {
+            Ok(_) => {}
+            Err(e) => { panic!("LuaError: {:?}", e); }
+        }
+
+        self.participants_startedwith = self.participants.clone();
+
+        self.event_queue.sender().send(Event::SendData);
+
+        self.event_queue.sender().send(Event::SendCode(source_code));
+
+        self.event_queue.sender().send(Event::Execute);
     }
 
-    pub fn test_participant_event(& mut self) {
-        if self.participants.len() == 1 {
-            self.event_queue.sender().send(Event::SendData);
+    pub fn display_participants(& self) {
+        println!("Participants: {:?}", self.participants);
+    }
 
-            use std::fs::File;
-
-            let mut fh = File::open(".\\docs\\sample_code.lua").unwrap();
-
-            let mut source_code = String::new();
-
-            fh.read_to_string(& mut source_code).unwrap();
-
-            self.event_queue.sender().send(Event::SendCode(source_code));
-
-            self.event_queue.sender().send(Event::Execute);
-        }
+    pub fn display_participant_count(& self) {
+        println!("Participant count: {}", self.participants.len());
     }
 
     pub fn check_events(& mut self) {
@@ -104,62 +120,84 @@ impl<'a> Host<'a> {
             Some(event) => match event {
                 Event::Network(net_event) => match net_event {
                     NetEvent::Message(endpoint, message) => {
-                        println!("Message received");
+
 
                         match message {
                             Message::Register(name) => {
-                                println!("    Register participant");
-                                self.participants.insert(name, endpoint);
-
-                                self.test_participant_event();
-
-                                println!("Set: {:?}", self.participants);
+                                println!("Register participant '{}'", name);
+                                if self.participants.contains_left(&name) {
+                                    println!("Participant {} could not be registered. Participant with this name already exists.", name);
+                                    self.network.remove_resource(endpoint.resource_id());
+                                }
+                                else {
+                                    self.participants.insert(name, endpoint);
+                                }
                             },
                             Message::Unregister => {
+                                let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
+                                println!("Unregister participant '{}'", endpoint_name);
                                 self.participants.remove_by_right(&endpoint);
                             },
                             Message::VectorPTH(data) => {
 
-                                //A participant has finished, so increment the count
-                                self.participants_finished += 1;
-
-                                //If this is the first participant, initialise the results variable
-                                if self.participants_finished == 1 {
-                                    self.lua.empty_array("results");
+                                if self.participants_startedwith != self.participants {
+                                    println!("Some participants have disconnected/connected before execution could complete.")
                                 }
+                                else {
+                                    let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
 
-                                {
-                                    //Create temporary global array called 'tmp_table'
-                                    let mut arr = self.lua.empty_array("tmp_table");
+                                    println!("Received data from '{}'.", endpoint_name);
 
-                                    // Copy data to temporary array
-                                    for (_, value) in data.iter().enumerate() {
-                                        arr.set(value.0.clone(), value.1.clone());
+                                    //A participant has finished, so increment the count
+                                    self.participants_finished += 1;
+
+                                    //If this is the first participant, initialise the results variable
+                                    if self.participants_finished == 1 {
+                                        self.lua.empty_array("results");
                                     }
-                                }
 
-                                //Move the temporary table to to the global results
-                                self.lua.execute::<()>(format!("results[{}] = tmp_table", self.participants_finished).as_str()).unwrap();
+                                    {
+                                        //Create temporary global array called 'tmp_table'
+                                        let mut arr = self.lua.empty_array("tmp_table");
 
-                                // Test to see if all participants have finished
-                                if self.participants.len() == self.participants_finished {
+                                        // Copy data to temporary array
+                                        for (_, value) in data.iter().enumerate() {
+                                            arr.set(value.0.clone(), value.1.clone());
+                                        }
+                                    }
 
-                                    // Execute 'interpret_results' function
-                                    let mut interpret_results: hlua::LuaFunction<_> = self.lua.get("interpret_results").unwrap();
+                                    //Move the temporary table to to the global results
+                                    self.lua.execute::<()>(format!("results[{}] = tmp_table", self.participants_finished).as_str()).unwrap();
 
-                                    // Get return value
-                                    let return_code: String = interpret_results.call().unwrap();
+                                    /*println!("    len:      {}", self.participants.len());
+                                    println!("    finished: {}", self.participants_finished);
+                                    println!("    parts_:   {:?}", self.participants);
+                                    println!("    partsS:   {:?}", self.participants_startedwith);*/
 
-                                    println!("Return code: {}", return_code);
+                                    // Test to see if all participants have finished
+                                    if self.participants.len() == self.participants_finished {
 
-                                    self.participants_finished = 0;
+
+                                        // Execute 'interpret_results' function
+                                        let mut interpret_results: hlua::LuaFunction<_> = self.lua.get("interpret_results").unwrap();
+
+                                        // Get return value
+                                        let return_code: String = interpret_results.call().unwrap();
+
+                                        println!("All participants finished. interpret_results return code: {}", return_code);
+
+
+                                        self.participants_finished = 0;
+                                    }
                                 }
                             },
                             Message::ParticipantError(err) => {
-                                println!("Participant Error: {}", err);
+                                let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
+                                println!("Participant '{}' Error: {}", endpoint_name, err);
                             },
                             Message::ParticipantWarning(err) => {
-                                println!("Participant Warning: {}", err);
+                                let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
+                                println!("Participant '{}' Warning: {}", endpoint_name, err);
                             }
                             _ => {
                                 panic!("Invalid message received by host ({:?})", message);
@@ -167,23 +205,25 @@ impl<'a> Host<'a> {
                         }
                     }
                     NetEvent::AddedEndpoint(endpoint) => {
-                        println!("Client Added {:?}", endpoint);
+                        println!("Client Added {}", endpoint);
                     },
                     NetEvent::RemovedEndpoint(endpoint) => {
                         //Client disconnected without unregistering
-                        println!("Client Disconnected {:?}", endpoint);
+                        let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
+                        println!("Client '{}' has disconnected", endpoint_name);
 
                         self.participants.remove_by_right(&endpoint);
-                        println!("Set: {:?}", self.participants);
                     }
                     NetEvent::DeserializationError(_) => (),
                 },
                 Event::SendCode(code) => {
+                    println!("Sending code to all {} participant(s)", self.participants.len());
                     for (_name, endpoint) in self.participants.iter() {
                         self.network.send(*endpoint, Message::Code(code.clone()));
                     }
                 },
                 Event::SendData => {
+                    println!("Sending data to all {} participant(s)", self.participants.len());
 
                     //Extract the 'generate data' function from the Lua script.
                     let mut generate_data: hlua::LuaFunction<_> = self.lua.get("generate_data").unwrap();
@@ -197,7 +237,6 @@ impl<'a> Host<'a> {
 
                         let list: SerdeLuaTable = result.iter::<AnyLuaValue, AnyLuaValue>().map(|pair| pair.unwrap()).collect();
 
-                        println!("Generated table: {:?}", list);
 
                         self.network.send(*endpoint, Message::VectorHTP(list));
                     }
@@ -212,6 +251,7 @@ impl<'a> Host<'a> {
                     self.network.send(endpoint, Message::Stop);
                 },
                 Event::Execute => {
+                    println!("Sending execute command to all {} participant(s)", self.participants.len());
                     for (_name, endpoint) in self.participants.iter() {
                         self.network.send(*endpoint, Message::Execute);
                     }

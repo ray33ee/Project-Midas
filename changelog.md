@@ -6,17 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 ### To Do
 - Use a TUI in host.rs to allow user to view the participants, their status, send data, code and commands.
+  - Any `println!` message currently used needs to be mapped to some form of TUI widget
+  - Allow user to control participants and execute code via host
+  - Show status of participants in TUI (Idle, calculating, etc.)
+  - Show any critical errors or warnings from host or participant 
 - Implement split function that can be used by Lua script to split data up for each participant
-- Send data, code and execute should be combined. This is to avoid participants being after data has been sent, which would cause issues.
-  - What other steps are needed to avoid this issue?
-- Use Rust log for event logging with TUI
-- Implement error handling for Host code showing messages via TUI
-- When `host` receives a `ParticipantError` message, it must unregister the participant
-  - This will be done automatically when the participant panics and disconnects, but we do it here just to make sure
-    - Verify that double removal from a hashset/hashmap doesn't panic  
-  - Make sure that if a participant fails (i.e. sends the `ParticipantError` message) then `interpret_results` must NOT be called
-- Find a way to automatically figure out the 'optimal' number of threads to use (when using option --threads)
-- Implement a very simple command system for testing Midas before using a TUI.
 
 ### Unfinished Ideas
 - rlua or hlua?
@@ -24,6 +18,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Implement progress function
 - Can we use `AnyLuaValue` type to store tables?
   - Experiment with the `LuaArray` option to see if we can use this as a table
+
+## [0.2.4] - 2021-02-21
+
+### Added
+- `Host::participants_startedwith` field added to keep track of the number of participants registered when the computation began.
+- We now use `thread::available_concurrency` to automatically select the number of threads to use (use -t or --threads without specifying a number)
+- Temporary key-press commands added (`e` for execution, `d` for displaying participants and `c` for showing how many participants are connected.)
+
+### Changed
+- Less debuggy, less verbose printed messages from `Host`
+- All spawned threads in participant nodes are named based on the supplied participant name
+
+### Fixed
+- Trying to add a participant with a name that already exists will cause the offending participant to be disconnected
+- We verify that the host acts correctly when a `ParticipantError` is received, namely
+  - The offending participant is removed from the participant list, so no more calculations can take place
+- Host now stops computation if the participants have changed since the start of the computation (i.e. any participants have connected/disconnected)
 
 ## [0.2.3] - 2021-02-20
 ### Added

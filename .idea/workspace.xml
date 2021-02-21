@@ -9,10 +9,10 @@
       <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/changelog.md" beforeDir="false" afterPath="$PROJECT_DIR$/changelog.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/sample_code.lua" beforeDir="false" afterPath="$PROJECT_DIR$/docs/sample_code.lua" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/readme.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/host.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/host.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/messages.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/messages.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/participant.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/participant.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -139,7 +139,7 @@
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
     <property name="restartRequiresConfirmation" value="false" />
     <property name="scala_project_settings_configurable.last_selected_tab_index" value="0" />
-    <property name="settings.editor.selected.configurable" value="org.jetbrains.plugins.scala.settings.ScalaProjectSettingsConfigurable" />
+    <property name="settings.editor.selected.configurable" value="language.rust" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -151,9 +151,14 @@
       <recent name="E:\Software Projects\IntelliJ\midas\stack_vm\src" />
     </key>
   </component>
+  <component name="RunAnythingCache">
+    <option name="myCommands">
+      <command value="cargo +nightly test" />
+    </option>
+  </component>
   <component name="RunManager" selected="Cargo.Debug Host">
     <configuration name="Debug Help" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run -- -h host" />
+      <option name="command" value="+nightly run -- -h host" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
@@ -168,7 +173,7 @@
       </method>
     </configuration>
     <configuration name="Debug Host" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run --  --address=192.168.1.166:3000  host  --script=&quot;.\docs\sample_code.lua&quot; " />
+      <option name="command" value="+nightly run --  --address=192.168.1.166:3000  host  --script=&quot;.\docs\sample_code.lua&quot; " />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
@@ -183,7 +188,7 @@
       </method>
     </configuration>
     <configuration name="Debug Participant" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run -- --address=192.168.1.166:3000 participant -t=4 -n=&quot;nectar&quot;" />
+      <option name="command" value="+nightly run -- --address=192.168.1.166:3000 participant -t=4 -n=&quot;nectar&quot;" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />
@@ -198,7 +203,7 @@
       </method>
     </configuration>
     <configuration name="Release" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="run --release" />
+      <option name="command" value="+nightly run --release" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
       <option name="channel" value="DEFAULT" />
       <option name="requiredFeatures" value="true" />

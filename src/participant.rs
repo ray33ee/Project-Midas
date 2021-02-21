@@ -17,7 +17,6 @@ pub struct Participant<'a> {
     network: Network,
 
     lua: Lua<'a>,
-    paused: bool,
 }
 
 impl<'a> Participant<'a> {
@@ -43,8 +42,7 @@ impl<'a> Participant<'a> {
                 host_endpoint,
                 event_queue,
                 network,
-                lua,
-                paused: false
+                lua
             }
         }
         else {
@@ -84,14 +82,13 @@ impl<'a> Participant<'a> {
 
                         },
                         Message::Pause => {
-                            self.paused = true;
+
                         },
                         Message::Play => {
-                            self.paused = false;
+
                         },
                         Message::Stop => {
 
-                            self.paused = false;
                         },
                         Message::Execute => {
 
@@ -105,31 +102,27 @@ impl<'a> Participant<'a> {
                                             self.network.send(self.host_endpoint, Message::VectorPTH(list));
                                         }
                                         Err(e) => {
-                                            self.network.send(self.host_endpoint, Message::ParticipantError(String::from(format!("LuaError on receive Message::Execute - {:?}", e))));
+                                            self.network.send(self.host_endpoint, Message::ParticipantError(String::from(format!("LuaError on receive Message::Execute (Lua function return type) - {:?}", e))));
                                             panic!("LuaError on receive Message::Execute - {:?}", e);
                                         }
                                     };
                                 },
                                 None => {
-                                    self.network.send(self.host_endpoint, Message::ParticipantError(String::from("LuaError on receive Message::Execute - Function 'execute_code' does not exist.")));
+                                    self.network.send(self.host_endpoint, Message::ParticipantError(String::from("LuaError on receive Message::Execute (Lua function call) - Function 'execute_code' does not exist.")));
                                     panic!("LuaError on receive Message::Execute - Function 'execute_code' does not exist.");
                                 }
                             }
 
 
-                            //Call generate_data function for each endpoint, and send the resultant data
-
-
-
 
 
                             }
-                        _ => { /*panic!("Invalid message {:?}", message);*/ }
+                        _ => { panic!("Invalid message {:?}", message); }
                     }
                 }
                 NetEvent::AddedEndpoint(_endpoint) => {},
                 NetEvent::RemovedEndpoint(_endpoint) => {
-                    println!("Server Disconnected");
+                    println!("Server Disconnected. See Host for more details.");
                 }
                 NetEvent::DeserializationError(_) => (),
             }

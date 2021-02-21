@@ -1,5 +1,5 @@
 
-prime = 67867967
+prime = 678679670
 
 function generate_data(endpoint_index, endpoint_count)
 
@@ -30,7 +30,6 @@ function execute_code()
 		if (prime % i == 0 )
 		then
 			participant_result.divisor = i
-			return participant_result
 
 		end
 

@@ -53,6 +53,10 @@ This functions returns a string, which can be used to show a message indicating 
 
 Midas uses a modified version of hlua, so if you build Midas yourself you must modify hlua such that the structs `AnyLuaValue` and `AnyLuaString` are serde serializable and deserializable.
 
+This modified version of hlua can be found [here](https://github.com/ray33ee/hlua).
+
+We also use the [available_concurrency](https://doc.rust-lang.org/std/thread/fn.available_concurrency.html) function which is currently nightly only.
+
 ## Host longevity
 
 Once a task is started, the host application must run at least until the partcipants have all stopped, it may not stop earlier. It is also important to mention that a node can host as well as participate by using different processes for the host. 
