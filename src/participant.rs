@@ -33,27 +33,29 @@ impl<'a> Participant<'a> {
 
         lua.openlibs();
 
-        if let Ok(host_endpoint) = network.connect(Transport::Tcp, server_address) {
-            println!("Participant '{}' connected to host ({})", name, server_address);
+        match network.connect(Transport::Tcp, server_address) {
+            Ok(host_endpoint) =>
+                {
+                    println!("Participant '{}' connected to host ({})", name, server_address);
 
-            network.send(host_endpoint, Message::Register(name.clone()));
+                    network.send(host_endpoint, Message::Register(name.clone()));
 
-            Participant {
-                host_endpoint,
-                event_queue,
-                network,
-                lua
+                    Participant {
+                        host_endpoint,
+                        event_queue,
+                        network,
+                        lua
+                    }
+                }
+            Err(e) => {
+                panic!("Could not connect to {} - {}", server_address, e);
             }
-        }
-        else {
-            panic!("Can not connect to the server by TCP to {}", server_address);
-
         }
 
 
     }
 
-    pub fn check_events(& mut self) {
+    pub fn check_events(& mut self) -> Result<(), ()> {
 
 
         match self.event_queue.receive() {
@@ -117,18 +119,22 @@ impl<'a> Participant<'a> {
 
 
                             }
-                        _ => { panic!("Invalid message {:?}", message); }
+                        _ => {
+                            self.network.send(self.host_endpoint, Message::ParticipantError(format!("Invalid message {:?}", message)));
+                            panic!("Invalid message {:?}", message);
+                        }
                     }
                 }
                 NetEvent::AddedEndpoint(_endpoint) => {},
                 NetEvent::RemovedEndpoint(_endpoint) => {
                     println!("Server Disconnected. See Host for more details.");
+                    return Err(())
                 }
                 NetEvent::DeserializationError(_) => (),
             }
         }
 
-
+        Ok(())
     }
 
 }

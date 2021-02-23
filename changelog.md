@@ -6,11 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 ### To Do
 - Use a TUI in host.rs to allow user to view the participants, their status, send data, code and commands.
-  - Any `println!` message currently used needs to be mapped to some form of TUI widget
+  - Any `println!` message currently used within `Host` needs to be mapped to some form of TUI widget
   - Allow user to control participants and execute code via host
   - Show status of participants in TUI (Idle, calculating, etc.)
   - Show any critical errors or warnings from host or participant 
 - Implement split function that can be used by Lua script to split data up for each participant
+- When dealing with tables returned by Lua, make sure none of th key-data pairs are `LuaOther` as these will not be converted correctly. Warn user that tables within tables are not yet supported.
+- Move from message-io's `EventQueue` to `mpsc` to allow us to use threads
 
 ### Unfinished Ideas
 - rlua or hlua?
@@ -18,6 +20,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Implement progress function
 - Can we use `AnyLuaValue` type to store tables?
   - Experiment with the `LuaArray` option to see if we can use this as a table
+
+## [0.2.5] - 2021-02-21
+
+### Added
+- `Host::new` returns a `Result` that indicates if the starting of the server failed or succeeded
+
+### Changed
+- `Host::participants_finished` field is reset when the `Host::start_participants` is called, not when the data is received
+- All participants are executed on spawned threads, the main thread now only waits for spawned threads
+- Certain println! messages migrated from `Host` methods to `Panel` events
+- Host events moved into messages.rs
+- `ParticipantStatus` enum added and implemented for `Idle` and `Calculating` 
+- `Participant::check_events` now returns `Result` so if the function fails, the thread can terminate. If all threads terminate, the application ends.
 
 ## [0.2.4] - 2021-02-21
 

@@ -1,5 +1,7 @@
 
 use serde::{Serialize, Deserialize};
+use message_io::network::Endpoint;
+use message_io::network::NetEvent;
 
 use crate::lua::SerdeLuaTable;
 
@@ -27,4 +29,41 @@ pub enum Message {
 
     Register(String),
     Unregister
+}
+
+pub enum ParticipantStatus {
+    Idle,
+    Calculating,
+}
+
+pub enum UiEvents {
+    ChangeStatusTo(ParticipantStatus, Endpoint, String),
+
+    ParticipantError(Endpoint, String, String),
+    ParticipantWarning(Endpoint, String, String),
+    ParticipantWhisper(Endpoint, String, String),
+
+    ParticipantRegistered(Endpoint, String),
+    ParticipantUnregistered(Endpoint, String),
+
+    InterpretResultsReturn(String),
+
+    HostMessage(String),
+
+}
+
+
+pub enum HostEvent {
+    Network(NetEvent<Message>),
+    SendCode(String),
+    SendData,
+    Pause(Endpoint),
+    Play(Endpoint),
+    Stop(Endpoint),
+    Execute,
+
+    Begin(String),
+
+    DebugPrintCount,
+    DebugPrintParticipants,
 }

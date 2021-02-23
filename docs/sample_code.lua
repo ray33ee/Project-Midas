@@ -25,6 +25,8 @@ function execute_code()
 	participant_result.lower = lower
 	participant_result.upper = upper
 
+	--if lower - 2 == 0 then return end
+
 	for i = lower,upper,1
 	do
 		if (prime % i == 0 )

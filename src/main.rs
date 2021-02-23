@@ -6,6 +6,7 @@ mod host;
 mod participant;
 mod messages;
 mod lua;
+mod ui;
 
 extern crate clap;
 
@@ -14,6 +15,14 @@ use std::thread;
 
 use crossterm::event::{read, Event, poll};
 use std::time::Duration;
+
+use crate::ui::Panel;
+use crate::host::Host;
+
+use std::time::{Instant};
+
+use crate::messages::HostEvent;
+use crate::messages::UiEvents::HostMessage;
 
 fn main() {
 
@@ -83,45 +92,73 @@ fn main() {
 
     match app_matches.subcommand() {
         ("host", host_matches) => {
-            let mut host = host::Host::new(ip_address.as_str());
+            match Host::new(ip_address.as_str()) {
+                Ok(mut host) => {
+                    let (ui_sender, mut panel) = Panel::new(host.get_host_sender());
 
-            let script_path = host_matches.unwrap().value_of("Lua script").unwrap();
+                    let key_sender = host.get_host_sender();
 
-            loop {
-                if let Ok(true) = poll(Duration::from_secs(0)) {
-                    match read().unwrap() {
-                        Event::Key(key_event) => {
-                            match key_event.code {
-                                crossterm::event::KeyCode::Char('e') => {
-                                    host.start_participants(script_path);
-                                },
-                                crossterm::event::KeyCode::Char('d') => {
-                                    host.display_participants();
-                                },
-                                crossterm::event::KeyCode::Char('c') => {
-                                    host.display_participant_count();
-                                },
+                    host.set_ui_sender(ui_sender);
+
+
+                    let script_path = host_matches.unwrap().value_of("Lua script").unwrap();
+
+                    /*thread::spawn(move ||
+                        host.check_events()
+                    );*/
+
+
+                    loop {
+                        //let start = Instant::now();
+
+                        if let Ok(true) = poll(Duration::from_secs(0)) {
+                            match read().unwrap() {
+                                Event::Key(key_event) => {
+                                    match key_event.code {
+                                        crossterm::event::KeyCode::Char('e') => {
+                                            //host.start_participants(script_path);
+                                            key_sender.send(HostEvent::Begin(String::from(script_path)));
+                                        },
+                                        crossterm::event::KeyCode::Char('d') => {
+                                            //host.display_participants();
+                                            key_sender.send(HostEvent::DebugPrintParticipants);
+                                        },
+                                        crossterm::event::KeyCode::Char('c') => {
+                                            //host.display_participant_count();
+                                            key_sender.send(HostEvent::DebugPrintCount);
+                                        },
+                                        _ => {}
+                                    }
+                                }
                                 _ => {}
                             }
                         }
-                        _ => {}
+
+                        //println!("After poll - {:?}", start.elapsed());
+
+                        host.check_events();
+
+                        //host.check_events();
+                        //println!("After check - {:?}", start.elapsed());
+                        panel.tick();
+                        //println!("After tick - {:?}", start.elapsed());
                     }
+                },
+                Err(error) => {
+                    println!("Host Error - {}", error);
                 }
-                host.check_events();
             }
+
+
         },
         ("participant", participant_matches) => {
 
 
-
-            //Integer containing the number of extra threads to spawn.
-            //This can be written as spawn_thread_count = total_thread_count - 1
-            //Since one of the total threads is the main thread, which is not spawned
-            let spawn_thread_count: usize = if participant_matches.unwrap().is_present("thread count")
+            let thread_count: usize = if participant_matches.unwrap().is_present("thread count")
             {
                 match participant_matches.unwrap().value_of("thread count") {
                     Some(thread_count) => {
-                        thread_count.parse::<usize>().unwrap() - 1
+                        thread_count.parse::<usize>().unwrap()
                     },
                     None => {
                         thread::available_concurrency().unwrap().get()
@@ -129,39 +166,39 @@ fn main() {
                 }
             }
             else {
-                0
+                1
             };
 
             let participant_name = String::from(participant_matches.unwrap().value_of("participant name").unwrap());
 
-            for i in 0..spawn_thread_count {
+            let mut thread_vec = Vec::new();
 
-                thread::Builder::new().name(
-                    format!("thread_{}-{}", &participant_name, i)
-                ).spawn(capture!(clone participant_name, clone ip_address, clone i in move || {
-                    let mut participant = participant::Participant::new(format!("{}-{}", participant_name, i), ip_address.as_str());
+            for i in 0..thread_count {
 
-                    loop {
-                        participant.check_events();
-                    }
-                })).unwrap();
+                thread_vec.push(thread::Builder::new()
+                    .name(format!("thread_{}-{}", &participant_name, i))
+                    .spawn(capture!(clone participant_name, clone ip_address, clone i, clone thread_count in move || {
+                        let mut participant = participant::Participant::new(
+                            if thread_count == 1 {
+                                format!("{}", participant_name)
+                            }
+                            else {
+                                format!("{}-{}", participant_name, i)
+                            },ip_address.as_str());
+
+                        while let Ok(_) = participant.check_events() {
+
+                        }
+
+                })).unwrap());
             }
 
-
-            //This final participant is executed in the main thread
-            let mut participant = participant::Participant::new(
-                if spawn_thread_count == 0 {
-                        format!("{}", participant_name)
-                    }
-                    else {
-                        format!("{}-{}", participant_name, spawn_thread_count)
-                    }
-                ,
-
-                ip_address.as_str());
-
-            loop {
-                participant.check_events();
+            //Under normal operation, each spawned thread and main thread should
+            //continue execution indefinitely. Here we block the main thread to allow
+            //the spawned threads to continue. If all the spawned threads end, then the
+            //main thread will end, along with the application
+            for thread_handle in thread_vec {
+                thread_handle.join().unwrap();
             }
 
         },
