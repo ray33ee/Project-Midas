@@ -13,16 +13,11 @@ extern crate clap;
 use clap::{crate_version, Arg, App, SubCommand};
 use std::thread;
 
-use crossterm::event::{read, Event, poll};
-use std::time::Duration;
-
 use crate::ui::Panel;
 use crate::host::Host;
 
-use std::time::{Instant};
-
-use crate::messages::HostEvent;
-use crate::messages::UiEvents::HostMessage;
+use crate::messages::{HostEvent, UiEvents};
+use std::sync::mpsc::channel;
 
 fn main() {
 
@@ -90,58 +85,26 @@ fn main() {
 
     let ip_address = String::from(app_matches.value_of("socket address").unwrap());
 
+    //Setup the channels of communication between Host code and ui
+    let (command_sender, command_receiver) = channel::<HostEvent>();
+    let (message_sender, message_receiver) = channel::<UiEvents>();
+
     match app_matches.subcommand() {
         ("host", host_matches) => {
-            match Host::new(ip_address.as_str()) {
+            match Host::new(command_receiver, command_sender.clone(), message_sender,ip_address.as_str()) {
                 Ok(mut host) => {
-                    let (ui_sender, mut panel) = Panel::new(host.get_host_sender());
-
-                    let key_sender = host.get_host_sender();
-
-                    host.set_ui_sender(ui_sender);
-
-
                     let script_path = host_matches.unwrap().value_of("Lua script").unwrap();
 
-                    /*thread::spawn(move ||
-                        host.check_events()
-                    );*/
+                    let mut panel = Panel::new(command_sender.clone(), message_receiver, String::from(script_path));
 
+                    thread::spawn(move ||
+                        loop {
+                            host.check_events()
+                        }
+                    );
 
                     loop {
-                        //let start = Instant::now();
-
-                        if let Ok(true) = poll(Duration::from_secs(0)) {
-                            match read().unwrap() {
-                                Event::Key(key_event) => {
-                                    match key_event.code {
-                                        crossterm::event::KeyCode::Char('e') => {
-                                            //host.start_participants(script_path);
-                                            key_sender.send(HostEvent::Begin(String::from(script_path)));
-                                        },
-                                        crossterm::event::KeyCode::Char('d') => {
-                                            //host.display_participants();
-                                            key_sender.send(HostEvent::DebugPrintParticipants);
-                                        },
-                                        crossterm::event::KeyCode::Char('c') => {
-                                            //host.display_participant_count();
-                                            key_sender.send(HostEvent::DebugPrintCount);
-                                        },
-                                        _ => {}
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-
-                        //println!("After poll - {:?}", start.elapsed());
-
-                        host.check_events();
-
-                        //host.check_events();
-                        //println!("After check - {:?}", start.elapsed());
                         panel.tick();
-                        //println!("After tick - {:?}", start.elapsed());
                     }
                 },
                 Err(error) => {

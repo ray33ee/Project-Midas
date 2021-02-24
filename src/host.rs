@@ -4,23 +4,26 @@ use message_io::network::Endpoint;
 
 use bimap::BiMap;
 
-use message_io::events::{EventQueue, EventSender};
 use message_io::network::{Network, NetEvent, Transport};
 
 use hlua::{Lua, AnyLuaValue, LuaTable};
 use std::io::Read;
 
 use crate::lua::SerdeLuaTable;
-use std::time::Duration;
 
 use crate::messages::HostEvent;
+use std::sync::mpsc::{Receiver, Sender};
 
 pub struct Host<'a> {
     participants: BiMap<String, Endpoint>,
-    event_queue: EventQueue<HostEvent>,
+    //event_queue: EventQueue<HostEvent>,
     network: Network,
 
-    ui_sender: Option<EventSender<UiEvents>>,
+    //ui_sender: Option<EventSender<UiEvents>>,
+
+    command_receiver: Receiver<HostEvent>,
+    command_sender: Sender<HostEvent>,
+    message_sender: Sender<UiEvents>,
 
     participants_finished: usize,
     participants_startedwith: BiMap<String, Endpoint>,
@@ -30,13 +33,16 @@ pub struct Host<'a> {
 
 impl<'a> Host<'a> {
 
-    pub fn new(server_address: &str) -> Result<Self, String> {
+    pub fn new(command_receiver: Receiver<HostEvent>,
+               command_sender: Sender<HostEvent>,
+               message_sender: Sender<UiEvents>,
+               server_address: &str) -> Result<Self, String> {
 
-        let mut event_queue = EventQueue::new();
+        //let mut event_queue = EventQueue::new();
 
-        let network_sender = event_queue.sender().clone();
+        let network_sender = command_sender.clone();
 
-        let mut network = Network::new(move |net_event| network_sender.send(HostEvent::Network(net_event)));
+        let mut network = Network::new(move |net_event| network_sender.send(HostEvent::Network(net_event)).unwrap());
 
         let mut lua = Lua::new();
 
@@ -50,26 +56,27 @@ impl<'a> Host<'a> {
 
         Ok(Host {
             participants: BiMap::new(),
-            event_queue,
+            command_receiver,
+            command_sender: command_sender.clone(),
             network,
             participants_finished: 0,
             participants_startedwith: BiMap::new(),
-            ui_sender: None,
+            message_sender,
             lua
         })
     }
 
-    pub fn get_host_sender(& mut self) -> EventSender<HostEvent> {
+    /*pub fn get_host_sender(& mut self) -> EventSender<HostEvent> {
         self.event_queue.sender().clone()
-    }
+    }*/
 
-    pub fn set_ui_sender(& mut self, sender: EventSender<UiEvents>) {
-        self.ui_sender = Some(sender);
-    }
+    /*pub fn set_ui_sender(& mut self, sender: Sender<UiEvents>) {
+        self.message_sender = Some(sender);
+    }*/
 
     pub fn start_participants(& mut self, path: &str) {
 
-        self.ui_sender.as_ref().unwrap().send(UiEvents::HostMessage(format!("Starting calculations.")));
+        self.message_sender.send(UiEvents::HostMessage(format!("Starting calculations."))).unwrap();
 
         use std::fs::File;
 
@@ -88,11 +95,11 @@ impl<'a> Host<'a> {
 
         self.participants_startedwith = self.participants.clone();
 
-        self.event_queue.sender().send(HostEvent::SendData);
+        self.command_sender.send(HostEvent::SendData).unwrap();
 
-        self.event_queue.sender().send(HostEvent::SendCode(source_code));
+        self.command_sender.send(HostEvent::SendCode(source_code)).unwrap();
 
-        self.event_queue.sender().send(HostEvent::Execute);
+        self.command_sender.send(HostEvent::Execute).unwrap();
     }
 
     pub fn display_participants(& self) {
@@ -105,8 +112,10 @@ impl<'a> Host<'a> {
 
     pub fn check_events(& mut self) {
 
-        match self.event_queue.receive_timeout(Duration::from_micros(0)) {
-            Some(event) => match event {
+        //println!("Check events started");
+
+        match self.command_receiver.recv(/*Duration::from_micros(0)*/) {
+            Ok(event) => match event {
                 HostEvent::Network(net_event) => match net_event {
                     NetEvent::Message(endpoint, message) => {
 
@@ -114,20 +123,20 @@ impl<'a> Host<'a> {
                         match message {
                             Message::Register(name) => {
                                 if self.participants.contains_left(&name) {
-                                    self.ui_sender.as_ref().unwrap().send(UiEvents::HostMessage(format!("Participant {} could not be registered. Participant with this name already exists.", name)));
+                                    self.message_sender.send(UiEvents::HostMessage(format!("Participant {} could not be registered. Participant with this name already exists.", name))).unwrap();
                                     self.network.remove_resource(endpoint.resource_id());
                                 }
                                 else {
                                     self.participants.insert(name.clone(), endpoint);
-                                    self.ui_sender.as_ref().unwrap().send(UiEvents::ParticipantRegistered(endpoint, name.clone()));
-                                    self.ui_sender.as_ref().unwrap().send(UiEvents::ChangeStatusTo(ParticipantStatus::Idle, endpoint, name));
+                                    self.message_sender.send(UiEvents::ParticipantRegistered(endpoint, name.clone())).unwrap();
+                                    self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Idle, endpoint, name)).unwrap();
 
                                 }
                             },
                             Message::Unregister => {
                                 {
                                     let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                                    self.ui_sender.as_ref().unwrap().send(UiEvents::ParticipantUnregistered(endpoint, endpoint_name.clone()));
+                                    self.message_sender.send(UiEvents::ParticipantUnregistered(endpoint, endpoint_name.clone())).unwrap();
                                 }
                                 self.participants.remove_by_right(&endpoint);
                             },
@@ -135,10 +144,10 @@ impl<'a> Host<'a> {
 
                                 let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
 
-                                self.ui_sender.as_ref().unwrap().send(UiEvents::ChangeStatusTo(ParticipantStatus::Idle, endpoint, endpoint_name.clone()));
+                                self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Idle, endpoint, endpoint_name.clone())).unwrap();
 
                                 if self.participants_startedwith != self.participants {
-                                    self.ui_sender.as_ref().unwrap().send(UiEvents::HostMessage(format!("Some participants have disconnected/connected before execution could complete.")));
+                                    self.message_sender.send(UiEvents::HostMessage(format!("Some participants have disconnected/connected before execution could complete."))).unwrap();
 
                                 }
                                 else {
@@ -173,22 +182,22 @@ impl<'a> Host<'a> {
                                         // Get return value
                                         let return_code: String = interpret_results.call().unwrap();
 
-                                        self.ui_sender.as_ref().unwrap().send(UiEvents::InterpretResultsReturn(return_code));
+                                        self.message_sender.send(UiEvents::InterpretResultsReturn(return_code)).unwrap();
 
                                     }
                                 }
                             },
                             Message::ParticipantError(err) => {
                                 let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                                self.ui_sender.as_ref().unwrap().send(UiEvents::ParticipantError(endpoint, err, endpoint_name.clone()));
+                                self.message_sender.send(UiEvents::ParticipantError(endpoint, err, endpoint_name.clone())).unwrap();
                             },
                             Message::ParticipantWarning(err) => {
                                 let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                                self.ui_sender.as_ref().unwrap().send(UiEvents::ParticipantWarning(endpoint, err, endpoint_name.clone()));
+                                self.message_sender.send(UiEvents::ParticipantWarning(endpoint, err, endpoint_name.clone())).unwrap();
                             },
                             Message::Whisper(err) => {
                                 let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                                self.ui_sender.as_ref().unwrap().send(UiEvents::ParticipantWhisper(endpoint, err, endpoint_name.clone()));
+                                self.message_sender.send(UiEvents::ParticipantWhisper(endpoint, err, endpoint_name.clone())).unwrap();
                             }
                             _ => {
 
@@ -204,7 +213,7 @@ impl<'a> Host<'a> {
                         //Client disconnected without unregistering
                         {
                             let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                            self.ui_sender.as_ref().unwrap().send(UiEvents::ParticipantUnregistered(endpoint, endpoint_name.clone()));
+                            self.message_sender.send(UiEvents::ParticipantUnregistered(endpoint, endpoint_name.clone())).unwrap();
                         }
                         self.participants.remove_by_right(&endpoint);
                     }
@@ -247,7 +256,7 @@ impl<'a> Host<'a> {
                 HostEvent::Execute => {
                     for (name, endpoint) in self.participants.iter() {
                         self.network.send(*endpoint, Message::Execute);
-                        self.ui_sender.as_ref().unwrap().send(UiEvents::ChangeStatusTo(ParticipantStatus::Calculating, *endpoint, name.clone()))
+                        self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Calculating, *endpoint, name.clone())).unwrap();
                     }
                 },
                 HostEvent::Begin(path) => {
@@ -260,10 +269,12 @@ impl<'a> Host<'a> {
                     self.display_participants();
                 }
             },
-            None => {
-
+            Err(_e) => {
+                //println!("Receive error in host - {}", e);
             }
         }
+
+        //println!("Check events finished");
 
     }
 
