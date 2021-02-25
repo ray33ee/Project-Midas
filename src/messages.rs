@@ -64,6 +64,10 @@ pub enum HostEvent {
 
     Begin(String),
 
+    PlayAll,
+    PauseAll,
+    StopAll,
+
     DebugPrintCount,
     DebugPrintParticipants,
 }

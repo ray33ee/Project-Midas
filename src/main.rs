@@ -17,7 +17,7 @@ use crate::ui::Panel;
 use crate::host::Host;
 
 use crate::messages::{HostEvent, UiEvents};
-use std::sync::mpsc::channel;
+use crossbeam_channel::unbounded;
 
 fn main() {
 
@@ -86,8 +86,8 @@ fn main() {
     let ip_address = String::from(app_matches.value_of("socket address").unwrap());
 
     //Setup the channels of communication between Host code and ui
-    let (command_sender, command_receiver) = channel::<HostEvent>();
-    let (message_sender, message_receiver) = channel::<UiEvents>();
+    let (command_sender, command_receiver) = unbounded::<HostEvent>();
+    let (message_sender, message_receiver) = unbounded::<UiEvents>();
 
     match app_matches.subcommand() {
         ("host", host_matches) => {
@@ -149,7 +149,7 @@ fn main() {
                                 format!("{}-{}", participant_name, i)
                             },ip_address.as_str());
 
-                        while let Ok(_) = participant.check_events() {
+                        while let Ok(_) = participant.tick() {
 
                         }
 

@@ -1,5 +1,5 @@
 
-prime = 678679670
+prime = 67867967
 
 function generate_data(endpoint_index, endpoint_count)
 
@@ -17,15 +17,17 @@ end
 
 function execute_code()
 
+    check()
+
 	participant_result = {}
+
+
+
+	participant_result.lower = global_data.lower
+	participant_result.upper = global_data.upper
 
 	lower = global_data.lower
 	upper = global_data.upper
-
-	participant_result.lower = lower
-	participant_result.upper = upper
-
-	--if lower - 2 == 0 then return end
 
 	for i = lower,upper,1
 	do

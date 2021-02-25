@@ -2,7 +2,7 @@
 use crate::messages::{ParticipantStatus, UiEvents, HostEvent};
 use std::time::Duration;
 
-use std::sync::mpsc::{Sender, Receiver};
+use crossbeam_channel::{Sender, Receiver};
 
 use crossterm::event::{read, Event, poll};
 
@@ -52,6 +52,21 @@ impl Panel {
                         crossterm::event::KeyCode::Char('c') => {
                             //host.display_participant_count();
                             self.command_sender.send(HostEvent::DebugPrintCount).unwrap();
+                        },
+                        crossterm::event::KeyCode::Char('p') => {
+                            //host.display_participant_count();
+                            println!("Pee pee");
+                            self.command_sender.send(HostEvent::PauseAll).unwrap();
+                        },
+                        crossterm::event::KeyCode::Char('l') => {
+                            //host.display_participant_count();
+                            println!("Pee pee");
+                            self.command_sender.send(HostEvent::PlayAll).unwrap();
+                        },
+                        crossterm::event::KeyCode::Char('s') => {
+                            //host.display_participant_count();
+                            println!("Pee pee");
+                            self.command_sender.send(HostEvent::StopAll).unwrap();
                         },
                         _ => {}
                     }

@@ -12,7 +12,7 @@ use std::io::Read;
 use crate::lua::SerdeLuaTable;
 
 use crate::messages::HostEvent;
-use std::sync::mpsc::{Receiver, Sender};
+use crossbeam_channel::{Receiver, Sender};
 
 pub struct Host<'a> {
     participants: BiMap<String, Endpoint>,
@@ -267,6 +267,24 @@ impl<'a> Host<'a> {
                 },
                 HostEvent::DebugPrintParticipants => {
                     self.display_participants();
+                },
+
+                HostEvent::PlayAll => {
+                    for (_, endpoint) in self.participants.iter() {
+                        self.network.send(*endpoint, Message::Play);
+                    }
+                },
+
+                HostEvent::PauseAll => {
+                    for (_, endpoint) in self.participants.iter() {
+                        self.network.send(*endpoint, Message::Pause);
+                    }
+                },
+
+                HostEvent::StopAll => {
+                    for (_, endpoint) in self.participants.iter() {
+                        self.network.send(*endpoint, Message::Stop);
+                    }
                 }
             },
             Err(_e) => {

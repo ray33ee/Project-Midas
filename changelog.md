@@ -12,13 +12,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Show any critical errors or warnings from host or participant 
 - Implement split function that can be used by Lua script to split data up for each participant
 - When dealing with tables returned by Lua, make sure none of th key-data pairs are `LuaOther` as these will not be converted correctly. Warn user that tables within tables are not yet supported.
+- Implement play/pause/stop/progress
 
 ### Unfinished Ideas
 - rlua or hlua?
-- Implement play/pause/stop
-- Implement progress function
 - Can we use `AnyLuaValue` type to store tables?
   - Experiment with the `LuaArray` option to see if we can use this as a table
+
+## [0.2.7] - 2021-02-24
+### Changed
+- Migrated from std `mpsc` to crossbeam-channel message passing which allow us to move a cloned receiver to the `check` closure
+- Renamed `Participant::check_events` to `Participant::tick`
+
+### Added
+- Extra keystrokes to temporary ui code, that allows us to send pause, start and stop signals
+- `Message::PlayAll`, `Message::StopAll` and `Message::PauseAll` messages
 
 ## [0.2.6] - 2021-02-23
 ### Changed

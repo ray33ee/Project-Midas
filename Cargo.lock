@@ -335,11 +335,12 @@ dependencies = [
 
 [[package]]
 name = "midas"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "bimap",
  "capture",
  "clap",
+ "crossbeam-channel",
  "crossterm",
  "hlua",
  "ipaddress",
