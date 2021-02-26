@@ -11,10 +11,7 @@
       <change beforePath="$PROJECT_DIR$/changelog.md" beforeDir="false" afterPath="$PROJECT_DIR$/changelog.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/sample_code.lua" beforeDir="false" afterPath="$PROJECT_DIR$/docs/sample_code.lua" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/host.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/host.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/messages.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/messages.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/participant.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/participant.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ui.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

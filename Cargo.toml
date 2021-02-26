@@ -1,6 +1,6 @@
 [package]
 name = "midas"
-version = "0.2.7"
+version = "0.2.8"
 authors = ["ray33ee <30669752+ray33ee@users.noreply.github.com>"]
 edition = "2018"
 

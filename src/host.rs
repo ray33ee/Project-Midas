@@ -198,6 +198,9 @@ impl<'a> Host<'a> {
                             Message::Whisper(err) => {
                                 let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
                                 self.message_sender.send(UiEvents::ParticipantWhisper(endpoint, err, endpoint_name.clone())).unwrap();
+                            },
+                            Message::Progress(progress) => {
+                                println!("DEPRECIATED Progress: {}", progress);
                             }
                             _ => {
 

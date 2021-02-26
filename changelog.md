@@ -12,12 +12,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Show any critical errors or warnings from host or participant 
 - Implement split function that can be used by Lua script to split data up for each participant
 - When dealing with tables returned by Lua, make sure none of th key-data pairs are `LuaOther` as these will not be converted correctly. Warn user that tables within tables are not yet supported.
-- Implement play/pause/stop/progress
+- Finish code for play/pause/stop
 
 ### Unfinished Ideas
 - rlua or hlua?
 - Can we use `AnyLuaValue` type to store tables?
   - Experiment with the `LuaArray` option to see if we can use this as a table
+
+## [0.2.8] - 2021-02-25
+### Added
+- Proof of concept for play/pause/stop commands and progress
+- Temporary code to `Host` to process a `Message::Progress` message
+- _progress and _check functions to Lua test script
+
+### Changed
+- Adding a monitoring thread to `Participant` means that the network is effectively multiple sender single consumer
+
+### Removed
+- `Event` enum in participant.rs since it is only relevant for GUI code
 
 ## [0.2.7] - 2021-02-24
 ### Changed
