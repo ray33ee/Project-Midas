@@ -253,7 +253,7 @@ impl<'a> Host<'a> {
                 HostEvent::Play(endpoint) => {
                     self.network.send(endpoint, Message::Play);
                 },
-                HostEvent::Stop(endpoint) => {
+                HostEvent::Kill(endpoint) => {
                     self.network.send(endpoint, Message::Stop);
                 },
                 HostEvent::Execute => {
@@ -284,7 +284,7 @@ impl<'a> Host<'a> {
                     }
                 },
 
-                HostEvent::StopAll => {
+                HostEvent::KillAll => {
                     for (_, endpoint) in self.participants.iter() {
                         self.network.send(*endpoint, Message::Stop);
                     }

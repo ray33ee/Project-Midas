@@ -25,7 +25,7 @@ Note: Multiple instances of the participant can be executed on a single node, ta
 
 ## Lua scripts
 
-The Lua scripts are executed by the host and participants, not only to execute the parallel code, but also to load the input data and process the output data. The script must the three following functions
+The Lua scripts are executed by the host and participants, not only to execute the parallel code, but also to load the input data and process the output data. The script must implement the three following functions
 
 ### `generate_data`
 
@@ -33,7 +33,21 @@ This function is called by the host for each participant and should be used to g
 
 The `generate_data` function can be used to algorithmically generate data, or load data from a file on the host.
 
-The return value is a table which is sent to the participant 
+The return value is a table which is sent to the participant
+
+Midas provides two extra functions that can be used to communicate extra information to the host, at the expense of increased overhead.
+Using these functions is not mandatory, so for performance intensive calculations these can be ignored.
+
+#### `_check`
+
+The `_check` function is used to detect and handle pause/play/stop events sent by the host. 
+For example, if a main loop is used within `generate_data` then calling `_check` occasionally within this loop will allow users to pause, play and stop the execution.
+
+Note: The `_check` function carries some overhead, so calling it every iteration of a loop is highly discouraged. 
+
+#### `_progress`
+
+The `_progress` function is used so send a percentage (as f32) to the host to indicate the progress through the execution
 
 ### `execute_code`
 

@@ -55,18 +55,18 @@ impl Panel {
                         },
                         crossterm::event::KeyCode::Char('p') => {
                             //host.display_participant_count();
-                            println!("Pee pee");
+                            println!("Pause");
                             self.command_sender.send(HostEvent::PauseAll).unwrap();
                         },
                         crossterm::event::KeyCode::Char('l') => {
                             //host.display_participant_count();
-                            println!("Pee pee");
+                            println!("Play");
                             self.command_sender.send(HostEvent::PlayAll).unwrap();
                         },
                         crossterm::event::KeyCode::Char('s') => {
                             //host.display_participant_count();
-                            println!("Pee pee");
-                            self.command_sender.send(HostEvent::StopAll).unwrap();
+                            println!("Stop");
+                            self.command_sender.send(HostEvent::KillAll).unwrap();
                         },
                         _ => {}
                     }

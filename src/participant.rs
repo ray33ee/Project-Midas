@@ -6,6 +6,7 @@ use crate::messages::Message;
 use crossbeam_channel::{Sender, Receiver, unbounded};
 
 use std::thread;
+use std::time::Duration;
 
 pub struct Participant<'a> {
 
@@ -88,11 +89,41 @@ impl<'a> Participant<'a> {
                                 let receiver = self.message_receiver.clone();
                                 self.lua.set("_check", hlua::function0(move ||
                                     {
-                                        println!("Check start");
-                                        match receiver.recv() {
+                                        //println!("Check start");
+                                        match receiver.recv_timeout(Duration::from_micros(0)) {
                                             Ok(netevent) => match netevent {
-                                                NetEvent::Message(_, msg) =>  {
-                                                    println!("Found from check: {:?}", msg);
+                                                NetEvent::Message(_, msg) => match msg {
+                                                    Message::Stop => {
+                                                        panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
+                                                    }
+                                                    Message::Pause => {
+                                                        println!("Pausing!!!");
+                                                        loop {
+                                                            match receiver.recv() {
+                                                                Ok(ne) => match ne {
+                                                                    NetEvent::Message(_, ms) => match ms {
+                                                                        Message::Stop => {
+                                                                            panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
+                                                                        }
+                                                                        Message::Play => {
+                                                                            break;
+                                                                        }
+                                                                        _ => {
+                                                                            println!("Inner: {:?}", msg);
+                                                                        }
+                                                                    }
+                                                                    _ => {}
+                                                                }
+                                                                Err(_) => {
+
+                                                                }
+                                                            }
+                                                        }
+                                                        println!("Unpaused");
+                                                    }
+                                                    _ => {
+                                                        println!("Check: {:?}", msg);
+                                                    }
                                                 }
                                                 _ => {}
                                             }
@@ -100,7 +131,7 @@ impl<'a> Participant<'a> {
 
                                             }
                                         }
-                                        println!("Check finish");
+                                        //println!("Check finish");
                                     }
                                 ));
 

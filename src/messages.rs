@@ -59,14 +59,14 @@ pub enum HostEvent {
     SendData,
     Pause(Endpoint),
     Play(Endpoint),
-    Stop(Endpoint),
+    Kill(Endpoint),
     Execute,
 
     Begin(String),
 
     PlayAll,
     PauseAll,
-    StopAll,
+    KillAll,
 
     DebugPrintCount,
     DebugPrintParticipants,

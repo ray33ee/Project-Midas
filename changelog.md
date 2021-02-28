@@ -12,12 +12,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Show any critical errors or warnings from host or participant 
 - Implement split function that can be used by Lua script to split data up for each participant
 - When dealing with tables returned by Lua, make sure none of th key-data pairs are `LuaOther` as these will not be converted correctly. Warn user that tables within tables are not yet supported.
-- Finish code for play/pause/stop
+- See if rlua supports tables of tables, if it does migrate to rlua.
 
 ### Unfinished Ideas
-- rlua or hlua?
 - Can we use `AnyLuaValue` type to store tables?
   - Experiment with the `LuaArray` option to see if we can use this as a table
+
+## [0.2.9] - 2021-02-26
+
+### Changed
+- Stop message has been changed to kill, which forcibly removes the participant during execution
+- Updated readme.md
+
+### Added
+- Code to handle pause/play and
 
 ## [0.2.8] - 2021-02-25
 ### Added
