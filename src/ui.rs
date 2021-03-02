@@ -6,7 +6,7 @@ use crossbeam_channel::{Sender, Receiver};
 
 use crossterm::event::{read, Event, poll};
 
-pub struct Panel {
+pub struct Panel<'a> {
     //For events sent from the host
     //ui_event_queue: EventQueue<UiEvents>,
 
@@ -17,11 +17,11 @@ pub struct Panel {
 
     message_receiver: Receiver<UiEvents>,
 
-    script_path: String,
+    script_path: & 'a str,
 }
 
-impl Panel {
-    pub fn new(command_sender: Sender<HostEvent>, message_receiver: Receiver<UiEvents>, script_path: String) -> Self {
+impl<'a> Panel<'a> {
+    pub fn new(command_sender: Sender<HostEvent>, message_receiver: Receiver<UiEvents>, script_path: & 'a str) -> Self {
 
         //let mut ui_event_queue = EventQueue::new();
 
@@ -43,7 +43,7 @@ impl Panel {
                     match key_event.code {
                         crossterm::event::KeyCode::Char('e') => {
                             //host.start_participants(script_path);
-                            self.command_sender.send(HostEvent::Begin(self.script_path.clone())).unwrap();
+                            self.command_sender.send(HostEvent::Begin(String::from(self.script_path))).unwrap();
                         },
                         crossterm::event::KeyCode::Char('d') => {
                             //host.display_participants();

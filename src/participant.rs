@@ -3,7 +3,7 @@ use message_io::network::{NetEvent, Network, Transport};
 
 use crate::messages::Message;
 
-use crossbeam_channel::{Sender, Receiver, unbounded};
+use crossbeam_channel::{Sender, Receiver, unbounded, RecvTimeoutError};
 
 use std::thread;
 use std::time::Duration;
@@ -75,6 +75,38 @@ impl<'a> Participant<'a> {
 
     }
 
+    fn recv_message(rec: & Receiver<NetEvent<Message>>, dur: Option<u64>) -> Option<Message> {
+        let net_event = if let Some(duration) = dur {
+            match rec.recv_timeout(Duration::from_micros(duration)) {
+                Ok(msg) => {
+                    msg
+                }
+                Err(receive_error) => match receive_error {
+                    RecvTimeoutError::Disconnected => {
+                        panic!("Participant::message_receiver has disconnected")
+                    },
+                    RecvTimeoutError::Timeout => {
+                        return None;
+                    }
+                }
+            }
+        } else {
+            rec.recv().expect("Participant::message_receiver has disconnected")
+        };
+
+        match net_event {
+            NetEvent::Message(_, message) => {
+                Some(message)
+            },
+            NetEvent::RemovedEndpoint(_endpoint) => {
+                panic!("Server Disconnected. See Host for more details.");
+            }
+            _ => {
+                None
+            }
+        }
+    }
+
     pub fn tick(& mut self) -> Result<(), ()> {
 
 
@@ -89,45 +121,42 @@ impl<'a> Participant<'a> {
                                 let receiver = self.message_receiver.clone();
                                 self.lua.set("_check", hlua::function0(move ||
                                     {
-                                        //println!("Check start");
-                                        match receiver.recv_timeout(Duration::from_micros(0)) {
-                                            Ok(netevent) => match netevent {
-                                                NetEvent::Message(_, msg) => match msg {
-                                                    Message::Stop => {
-                                                        panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
-                                                    }
-                                                    Message::Pause => {
-                                                        println!("Pausing!!!");
-                                                        loop {
-                                                            match receiver.recv() {
-                                                                Ok(ne) => match ne {
-                                                                    NetEvent::Message(_, ms) => match ms {
-                                                                        Message::Stop => {
-                                                                            panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
-                                                                        }
-                                                                        Message::Play => {
-                                                                            break;
-                                                                        }
-                                                                        _ => {
-                                                                            println!("Inner: {:?}", msg);
-                                                                        }
-                                                                    }
-                                                                    _ => {}
-                                                                }
-                                                                Err(_) => {
+                                        let refy = & receiver;
 
+
+                                        //println!("Check start");
+                                        match Self::recv_message(refy, Some(0)) {
+                                            Some(msg) => match msg {
+                                                Message::Stop => {
+                                                    panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
+                                                }
+                                                Message::Pause => {
+                                                    println!("Pausing!!!");
+                                                    loop {
+                                                        match Self::recv_message(refy, None) {
+                                                            Some(ms) => match ms {
+                                                                Message::Stop => {
+                                                                    panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
+                                                                }
+                                                                Message::Play => {
+                                                                    break;
+                                                                }
+                                                                _ => {
+                                                                    println!("Inner: {:?}", msg);
                                                                 }
                                                             }
+                                                            None => {
+
+                                                            }
                                                         }
-                                                        println!("Unpaused");
                                                     }
-                                                    _ => {
-                                                        println!("Check: {:?}", msg);
-                                                    }
+                                                    println!("Unpaused");
                                                 }
-                                                _ => {}
+                                                _ => {
+                                                    println!("Check: {:?}", msg);
+                                                }
                                             }
-                                            Err(_) => {
+                                            None => {
 
                                             }
                                         }

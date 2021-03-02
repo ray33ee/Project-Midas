@@ -18,6 +18,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Can we use `AnyLuaValue` type to store tables?
   - Experiment with the `LuaArray` option to see if we can use this as a table
 
+## [0.2.10] - 2021-02-28
+### Added
+- `Participant::recv_message` function simplifies the processing of incoming messages and the possible errors that can occur 
+
+### Removed
+- `capture` dependency removed as it wasn't used enough to warrant it
+
+### Changed
+- We use crossbeam's `scope` to allow us to use references in spawned threads, meaning we don't have to clone the `participant_name` and `ip_address` strings for each thread
+- Modified the `thread count` option such that when it is used the user specifies the number of threads, and when it is omitted we use all available concurrency
+
 ## [0.2.9] - 2021-02-26
 
 ### Changed
