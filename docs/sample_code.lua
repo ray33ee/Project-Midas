@@ -31,7 +31,7 @@ function execute_code()
 	for i = lower,upper,1
 	do
         if i % 100000 == 0 then _check() end
-	    --if i % 100000 == 0 then _progress(i) end
+	    if i % 100000 == 0 then _progress(i / upper * 100) end
 
 		if (prime % i == 0 )
 		then

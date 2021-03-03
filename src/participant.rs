@@ -131,7 +131,6 @@ impl<'a> Participant<'a> {
                                                     panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
                                                 }
                                                 Message::Pause => {
-                                                    println!("Pausing!!!");
                                                     loop {
                                                         match Self::recv_message(refy, None) {
                                                             Some(ms) => match ms {
@@ -150,10 +149,10 @@ impl<'a> Participant<'a> {
                                                             }
                                                         }
                                                     }
-                                                    println!("Unpaused");
+
                                                 }
                                                 _ => {
-                                                    println!("Check: {:?}", msg);
+                                                    println!("MESSAGE RECEIVED DURING PAUSE Check: {:?}", msg);
                                                 }
                                             }
                                             None => {
@@ -191,12 +190,10 @@ impl<'a> Participant<'a> {
                             },
                             Message::Pause => {},
                             Message::Play => {},
-                            Message::Stop => {},
+                            Message::Stop => {
+                                panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
+                            },
                             Message::Execute => {
-                                println!("Waiting first...");
-
-
-                                println!("Now executing.");
 
                                 match self.lua.get::<hlua::LuaFunction<_>, _>("execute_code")
                                 {

@@ -1,6 +1,6 @@
 [package]
 name = "midas"
-version = "0.2.10"
+version = "0.2.11"
 authors = ["ray33ee <30669752+ray33ee@users.noreply.github.com>"]
 edition = "2018"
 
@@ -17,6 +17,8 @@ bimap = "0.6.0"
 crossterm = "0.19.0"
 crossbeam-channel = "0.5.0"
 crossbeam = "0.8.0"
+tui = { version = "0.14", default-features = false, features = ['crossterm'] }
+chrono = "0.4.19"
 
 [patch.crates-io]
 hlua = { git = "https://github.com/ray33ee/hlua" }

@@ -6,17 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 ### To Do
 - Use a TUI in host.rs to allow user to view the participants, their status, send data, code and commands.
-  - Any `println!` message currently used within `Host` needs to be mapped to some form of TUI widget
   - Allow user to control participants and execute code via host
-  - Show status of participants in TUI (Idle, calculating, etc.)
-  - Show any critical errors or warnings from host or participant 
+  - Show participant information based on selected participant
+  - Allow scrolling of list and table objects
 - Implement split function that can be used by Lua script to split data up for each participant
 - When dealing with tables returned by Lua, make sure none of th key-data pairs are `LuaOther` as these will not be converted correctly. Warn user that tables within tables are not yet supported.
-- See if rlua supports tables of tables, if it does migrate to rlua.
+- Make sure things work correctly when events are caught during `_check` execution (for example when the execute button is pressed during an execution)
+- Convert percentage into i32 and vice versa
 
 ### Unfinished Ideas
 - Can we use `AnyLuaValue` type to store tables?
   - Experiment with the `LuaArray` option to see if we can use this as a table
+- See if rlua supports tables of tables, if it does migrate to rlua.
+- Do we need to send the name AND endpoint with UI messages?
+- Should the `Panel::participants` bimap use the name or the endpoint as the left key?
+
+## [0.2.11] - 2021-03-02
+### Added
+- Added MIT license
+- Tui has been added showing participants and events
+- All println! commands removed from `Host` and converted to `Panel` events
+- Status of participants now added, colours indicate status
+- Errors, warnings and info sent to or created by `Host` are also showed in the Tui
+- Structs and enums for storing information on participants in `Panel` and functions to convert to TUI objects
+
+### Changed 
+- Updated readme to reflect changes to command line options
+- Using stop when participants are idling now stops them
 
 ## [0.2.10] - 2021-02-28
 ### Added

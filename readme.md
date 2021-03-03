@@ -10,18 +10,18 @@ These two combined allow the host to send code to participants for them to execu
 Creating a host can be done by specifying an IP address (with port number) and the script to execute:
 
 ```shell
-midas --mode=host --address=127.0.0.1:3000 --script"C:\script.lua"
+midas --address=127.0.0.1:3000 host --script"C:\script.lua"
 ```
 
 ## Participant setup
 
-Creating a participant is similar, we must use the address we specified for the host (in this case 127.0.0.1:3000)
+Creating a participant is similar, we must use the address we specified for the host (in this case 127.0.0.1:3000), a name and the number of threads to use.
 
 ```shell
-midas --mode=participant --address=127.0.0.1:3000
+midas --address=127.0.0.1:3000 participant --threads=4 --name="laptop"
 ```
 
-Note: Multiple instances of the participant can be executed on a single node, taking advantage of the CPU multiprocessing power of nodes. 
+A name must be supplied to identify the participants in the host. If the number of threads is omitted, we automatically determine the number of threads to use.
 
 ## Lua scripts
 
@@ -65,13 +65,9 @@ This functions returns a string, which can be used to show a message indicating 
 
 ## Build
 
-Midas uses a modified version of hlua, so if you build Midas yourself you must modify hlua such that the structs `AnyLuaValue` and `AnyLuaString` are serde serializable and deserializable.
-
-This modified version of hlua can be found [here](https://github.com/ray33ee/hlua).
-
 We also use the [available_concurrency](https://doc.rust-lang.org/std/thread/fn.available_concurrency.html) function which is currently nightly only.
 
 ## Host longevity
 
-Once a task is started, the host application must run at least until the partcipants have all stopped, it may not stop earlier. It is also important to mention that a node can host as well as participate by using different processes for the host. 
+Once a task is started, the host application must run at least until the partcipants have all stopped, it may not stop earlier. If it does, all participants will stop immediately. It is also important to mention that a node can host as well as participate by using different processes for the host. 
 This means that a dedicated Host node is not needed, and the host code can be run on any of the nodes.
