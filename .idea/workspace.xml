@@ -10,7 +10,6 @@
       <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/changelog.md" beforeDir="false" afterPath="$PROJECT_DIR$/changelog.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/sample_code.lua" beforeDir="false" afterPath="$PROJECT_DIR$/docs/sample_code.lua" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/readme.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/host.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/host.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/messages.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/messages.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/participant.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/participant.rs" afterDir="false" />
@@ -157,7 +156,7 @@
       <command value="cargo +nightly test" />
     </option>
   </component>
-  <component name="RunManager" selected="Cargo.Debug Compile">
+  <component name="RunManager" selected="Cargo.Release Compile">
     <configuration name="Debug Compile" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
       <option name="command" value="+nightly build" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />

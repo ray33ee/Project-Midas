@@ -1,5 +1,5 @@
 
-prime = 67867967
+prime = 982451653
 
 function generate_data(endpoint_index, endpoint_count)
 
@@ -20,18 +20,23 @@ function execute_code()
 
 	participant_result = {}
 
-
-
 	participant_result.lower = global_data.lower
 	participant_result.upper = global_data.upper
 
 	lower = global_data.lower
 	upper = global_data.upper
 
+	current = os.clock()
+
 	for i = lower,upper,1
 	do
         if i % 100000 == 0 then _check() end
-	    if i % 100000 == 0 then _progress(i / upper * 100) end
+
+
+	    if os.clock() - current > 1 then
+	        _progress((i - lower) / (upper - lower) * 100)
+	        current = os.clock()
+	    end
 
 		if (prime % i == 0 )
 		then

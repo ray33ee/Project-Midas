@@ -119,6 +119,9 @@ impl<'a> Participant<'a> {
                                 //Register the _check function which allows Lua script users to check the
                                 //network and respond to pause/play and stop commands
                                 let receiver = self.message_receiver.clone();
+                                let net_sender = self.network.clone();
+
+
                                 self.lua.set("_check", hlua::function0(move ||
                                     {
                                         let refy = & receiver;
@@ -131,6 +134,8 @@ impl<'a> Participant<'a> {
                                                     panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
                                                 }
                                                 Message::Pause => {
+
+                                                    net_sender.send(Message::Paused).unwrap();
                                                     loop {
                                                         match Self::recv_message(refy, None) {
                                                             Some(ms) => match ms {
@@ -138,6 +143,8 @@ impl<'a> Participant<'a> {
                                                                     panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
                                                                 }
                                                                 Message::Play => {
+
+                                                                    net_sender.send(Message::Executing).unwrap();
                                                                     break;
                                                                 }
                                                                 _ => {
@@ -199,6 +206,7 @@ impl<'a> Participant<'a> {
                                 {
                                     Some(mut generate_data) => {
 
+                                        self.network.send(Message::Executing).unwrap();
 
                                         match generate_data.call::<LuaTable<_>>() {
                                             Ok(mut result) => {
@@ -221,7 +229,8 @@ impl<'a> Participant<'a> {
                                         panic!("LuaError on receive Message::Execute - Function 'execute_code' does not exist.");
                                     }
                                 }
-                            }
+                            },
+
                             _ => {
                                 self.network.send(Message::ParticipantError(format!("Invalid message {:?}", message))).unwrap();
                                 panic!("Invalid message {:?}", message);

@@ -66,7 +66,7 @@ impl<'a> Host<'a> {
 
     pub fn start_participants(& mut self, path: &str) {
 
-        self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Starting calculations."), Severity::Whisper)).unwrap();
+        self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Starting calculations."), Severity::Info)).unwrap();
 
         use std::fs::File;
 
@@ -168,20 +168,30 @@ impl<'a> Host<'a> {
                                 }
                             },
                             Message::ParticipantError(err) => {
-                                //let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                                //self.message_sender.send(UiEvents::ParticipantLog(endpoint, err, endpoint_name.clone(), Severity::Error)).unwrap();
+                                let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
+                                self.message_sender.send(UiEvents::Log(NodeType::Participant(endpoint_name.clone()), err, Severity::Error)).unwrap();
                             },
                             Message::ParticipantWarning(err) => {
-                               // let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                                //self.message_sender.send(UiEvents::ParticipantLog(endpoint, err, endpoint_name.clone(), Severity::Warning)).unwrap();
+                                let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
+                                self.message_sender.send(UiEvents::Log(NodeType::Participant(endpoint_name.clone()), err, Severity::Warning)).unwrap();
                             },
                             Message::Whisper(err) => {
-                               // let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                                //self.message_sender.send(UiEvents::ParticipantLog(endpoint, err, endpoint_name.clone(), Severity::Whisper)).unwrap();
+                                let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
+                                self.message_sender.send(UiEvents::Log(NodeType::Participant(endpoint_name.clone()), err, Severity::Info)).unwrap();
                             },
                             Message::Progress(progress) => {
                                 let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
                                 self.message_sender.send(UiEvents::ParticipantProgress(endpoint, endpoint_name.clone(),progress)).unwrap();
+
+                            },
+                            Message::Paused => {
+                                let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
+                                self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Paused, endpoint, endpoint_name.clone())).unwrap();
+
+                            },
+                            Message::Executing => {
+                                let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
+                                self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Calculating, endpoint, endpoint_name.clone())).unwrap();
 
                             }
                             _ => {
@@ -192,7 +202,7 @@ impl<'a> Host<'a> {
                     }
                     NetEvent::AddedEndpoint(endpoint) => {
                         //Client has connected to the host, but at this stage has not yet registered
-                        self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Client added: {}", endpoint), Severity::Whisper)).unwrap();
+                        self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Client added: {}", endpoint), Severity::Info)).unwrap();
 
                     },
                     NetEvent::RemovedEndpoint(endpoint) => {
@@ -206,7 +216,7 @@ impl<'a> Host<'a> {
                     NetEvent::DeserializationError(_) => (),
                 },
                 HostEvent::SendCode(code) => {
-                    self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Executing on {} participant(s)", self.participants.len()), Severity::Whisper)).unwrap();
+                    self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Executing on {} participant(s)", self.participants.len()), Severity::Info)).unwrap();
 
                     for (_name, endpoint) in self.participants.iter() {
                         self.network.send(*endpoint, Message::Code(code.clone()));
@@ -232,14 +242,14 @@ impl<'a> Host<'a> {
                 },
                 HostEvent::Pause(endpoint) => {
                     self.network.send(endpoint, Message::Pause);
-                    let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                    self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Paused, endpoint, endpoint_name.clone())).unwrap();
+                    //let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
+                    //self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Paused, endpoint, endpoint_name.clone())).unwrap();
 
                 },
                 HostEvent::Play(endpoint) => {
                     self.network.send(endpoint, Message::Play);
-                    let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                    self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Calculating, endpoint, endpoint_name.clone())).unwrap();
+                    //let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
+                    //self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Calculating, endpoint, endpoint_name.clone())).unwrap();
 
                 },
                 HostEvent::Kill(endpoint) => {
@@ -248,7 +258,7 @@ impl<'a> Host<'a> {
                 HostEvent::Execute => {
                     for (name, endpoint) in self.participants.iter() {
                         self.network.send(*endpoint, Message::Execute);
-                        self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Calculating, *endpoint, name.clone())).unwrap();
+                        //self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Calculating, *endpoint, name.clone())).unwrap();
                     }
                 },
                 HostEvent::Begin(path) => {
@@ -257,7 +267,7 @@ impl<'a> Host<'a> {
 
                 HostEvent::PlayAll => {
                     for (name, endpoint) in self.participants.iter() {
-                        self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Calculating, *endpoint, name.clone())).unwrap();
+                        //self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Calculating, *endpoint, name.clone())).unwrap();
                         self.network.send(*endpoint, Message::Play);
 
                     }
@@ -265,7 +275,7 @@ impl<'a> Host<'a> {
 
                 HostEvent::PauseAll => {
                     for (name, endpoint) in self.participants.iter() {
-                        self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Paused, *endpoint, name.clone())).unwrap();
+                        //self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Paused, *endpoint, name.clone())).unwrap();
                         self.network.send(*endpoint, Message::Pause);
 
                     }

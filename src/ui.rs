@@ -10,16 +10,20 @@ use crossterm::event::{read, Event, poll};
 use std::io;
 use tui::Terminal;
 use tui::backend::CrosstermBackend;
-use tui::widgets::{Block, Borders, ListItem, List, Row, Table, Cell};
+use tui::widgets::{Block, Borders, ListItem, List, Row, Table, Cell, ListState, Paragraph};
 use tui::layout::{Layout, Constraint, Direction};
 use tui::style::{Modifier, Color, Style};
+use tui::text::{Spans, Span};
+
+
 use std::io::Stdout;
 use bimap::BiMap;
 use message_io::network::Endpoint;
 
 use chrono::{Utc, DateTime};
+use tui::text::Text;
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 struct ParticipantInfo {
     endpoint: Endpoint,
     status: ParticipantStatus,
@@ -78,6 +82,14 @@ pub struct Panel<'a> {
 
     participants: BiMap<String, ParticipantInfo>,
 
+    participant_names: Vec<String>,
+
+    selected_widget: i32,
+
+    selected_participant: Option<String>,
+
+    participants_state: ListState,
+
     logs: Vec<LogEntry>,
 
 }
@@ -96,6 +108,10 @@ impl<'a> Panel<'a> {
             terminal,
             script_path,
             participants: BiMap::new(),
+            participants_state: ListState::default(),
+            selected_widget: 0,
+            selected_participant: None,
+            participant_names: Vec::new(),
             logs: Vec::new()
         }
     }
@@ -131,6 +147,63 @@ impl<'a> Panel<'a> {
                             self.terminal.clear().unwrap();
                             panic!("Ending");
                         },
+                        crossterm::event::KeyCode::Left => {
+                            self.selected_widget = 0;
+
+                        },
+                        crossterm::event::KeyCode::Right => {
+                            self.selected_widget = 1;
+                        },
+                        crossterm::event::KeyCode::Up => {
+                            match self.selected_widget {
+                                0 => {
+                                    let selected_index = self.participants_state.selected().unwrap_or(0);
+
+                                    if !self.participants.is_empty() {
+                                        if selected_index != 0 {
+                                            self.participants_state.select(Some(selected_index - 1));
+                                        }
+                                        else {
+                                            self.participants_state.select(Some(selected_index));
+                                        }
+                                    }
+                                },
+                                1 => {
+
+                                }
+                                _ => {}
+                            }
+                        },
+                        crossterm::event::KeyCode::Down => {
+                            match self.selected_widget {
+                                0 => {
+                                    let selected_index = self.participants_state.selected().unwrap_or(0);
+                                    if !self.participants.is_empty() {
+                                        if selected_index != self.participants.len() - 1 {
+                                            self.participants_state.select(Some(selected_index + 1));
+                                        }
+                                    }
+                                },
+                                1 => {
+
+                                }
+                                _ => {}
+                            }
+                        },
+                        crossterm::event::KeyCode::Enter => {
+                            match self.selected_widget {
+                                0 => {
+                                    self.selected_participant = match self.participants_state.selected() {
+                                        Some(index) => {
+                                            Some(self.participant_names.get(index).unwrap().clone())
+                                        }
+                                        None => None
+                                    }
+                                },
+                                _ => {}
+                            }
+                        }
+
                         _ => {}
                     }
                 }
@@ -165,13 +238,13 @@ impl<'a> Panel<'a> {
                 },
                 UiEvents::ParticipantUnregistered(endpoint, name) => {
 
-                    self.logs.insert(0, LogEntry::new(Severity::Whisper, NodeType::Participant(name.clone()), format!("Client has disconnected.")));
+                    self.logs.insert(0, LogEntry::new(Severity::Info, NodeType::Participant(name.clone()), format!("Client has disconnected.")));
                     self.participants.remove_by_left(&name);
                     //println!("Client '{}' has disconnected. (endpoint: {})", name, endpoint);
                 },
                 UiEvents::InterpretResultsReturn(return_message) => {
                     //println!("All participants finished. interpret_results return code: {}", return_message);
-                    self.logs.insert(0, LogEntry::new(Severity::Whisper, NodeType::Host, return_message));
+                    self.logs.insert(0, LogEntry::new(Severity::Result, NodeType::Host, return_message));
                 },
                 UiEvents::ParticipantProgress(endpoint, name, progress) => {
                     let (_, mut info) = self.participants.remove_by_left(&name).unwrap();
@@ -189,25 +262,45 @@ impl<'a> Panel<'a> {
               entry.to_listitem()
           }).collect();
 
-        let mut participant_names: Vec<_> = self.participants.iter()
+        self.participant_names = self.participants.iter()
             .map(|(string, _)| string.clone())
             .collect()
             ;
 
-        participant_names.sort();
+        self.participant_names.sort();
 
-        let participant_items: Vec<_> = participant_names.iter()
+        let participant_items: Vec<_> = self.participant_names.iter()
             .map(|string| ListItem::new(string.as_str())
                 .style(Style::default()
                     .fg(
-                        match self.participants.get_by_left(string).unwrap().status {
-                            ParticipantStatus::Idle => Color::Green,
-                            ParticipantStatus::Calculating => Color::Rgb(255, 255, 0),
-                            ParticipantStatus::Paused => Color::Rgb(255, 128, 0),
-                         }
+                        self.participants.get_by_left(string).unwrap().status.to_color()
                     )))
             .collect();
 
+
+        let state = & mut self.participants_state;
+
+        let text = match &self.selected_participant {
+            Some(name) => {
+                match self.participants.get_by_left(name) {
+                    Some(info) => {
+                        Text::from(vec![
+                            Spans::from(format!("Name:     {}", name)),
+                            Spans::from(format!("Endpoint: {}", info.endpoint)),
+                            Spans::from(vec![/*format!("Progress: {:?}", info.progress)*/
+                                             Span::raw("Status:   "),
+                                             Span::styled(format!("{:?}", info.status), Style::default().fg(info.status.to_color()))
+                            ]),
+                            Spans::from(format!("Progress: {:?}", info.progress)),
+                        ])
+                    }
+                    None => Text::raw("naut")
+                }
+            }
+            None => {
+                Text::raw("naut")
+            }
+        };
 
         //Generate the UI
         self.terminal.draw(|f| {
@@ -228,8 +321,7 @@ impl<'a> Panel<'a> {
                 .constraints(
                     [
                         Constraint::Percentage(20),
-                        Constraint::Percentage(60),
-                        Constraint::Percentage(20)
+                        Constraint::Percentage(80)
                     ].as_ref()
                 )
                 .split(v_chunks[0]);
@@ -242,7 +334,7 @@ impl<'a> Panel<'a> {
                 .highlight_symbol(">>");
 
 
-            f.render_widget(participant_list, h_chunks[0]);
+            f.render_stateful_widget(participant_list, h_chunks[0], state);
 
 
             let log_table = Table::new(messages_items)
@@ -253,24 +345,20 @@ impl<'a> Panel<'a> {
                 )
                 .widths(&[Constraint::Length(19), Constraint::Length(7), Constraint::Length(12), Constraint::Length(500)])
                 .column_spacing(1)
-                .block(Block::default().title("Logds").borders(Borders::ALL))
+                .block(Block::default().title("Logs").borders(Borders::ALL))
                 .style(Style::default().fg(Color::White))
                 .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
-                .highlight_symbol(">>");
+                .highlight_symbol(">>").style(Style::default().fg(Color::White));
 
 
 
             f.render_widget(log_table, h_chunks[1]);
 
 
-            let block = Block::default()
-                .title("Actions")
-                .borders(Borders::ALL);
-            f.render_widget(block, h_chunks[2]);
 
-            let block = Block::default()
-                .title("Info")
-                .borders(Borders::ALL);
+            let block = Paragraph::new(text)
+                .block(Block::default().title("Info").borders(Borders::ALL))
+                ;
             f.render_widget(block, v_chunks[1]);
 
 

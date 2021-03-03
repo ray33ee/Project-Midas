@@ -29,29 +29,47 @@ pub enum Message {
     ParticipantWarning(String),
     Whisper(String),
 
+    Paused,
+    Continued,
+    Executing,
+
     Register(String),
     Unregister
 }
-#[derive(PartialEq, Eq, Hash)]
+
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum ParticipantStatus {
     Idle,
     Calculating,
     Paused,
 
 }
+
+impl ParticipantStatus {
+    pub fn to_color(& self) -> Color {
+        match self {
+            ParticipantStatus::Idle => Color::Green,
+            ParticipantStatus::Calculating => Color::Rgb(255, 255, 0),
+            ParticipantStatus::Paused => Color::Rgb(255, 128, 0),
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Hash)]
 pub enum Severity {
-    Whisper,
+    Info,
     Warning,
-    Error
+    Error,
+    Result
 }
 
 impl Severity {
     pub fn to_cell(& self) -> Cell {
         match self {
-            Severity::Whisper => Cell::from("INFO").style(Style::default()),
+            Severity::Info => Cell::from("INFO").style(Style::default()),
             Severity::Warning => Cell::from("WARNING").style(Style::default().fg(Color::Rgb(255, 255, 0))),
             Severity::Error => Cell::from("ERROR").style(Style::default().fg(Color::Rgb(255, 0, 0))),
+            Severity::Result => Cell::from("RESULT").style(Style::default().fg(Color::Rgb(255, 0, 100)))
         }
     }
 }

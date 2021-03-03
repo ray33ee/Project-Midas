@@ -7,12 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### To Do
 - Use a TUI in host.rs to allow user to view the participants, their status, send data, code and commands.
   - Allow user to control participants and execute code via host
-  - Show participant information based on selected participant
-  - Allow scrolling of list and table objects
+  - Add shortcuts for play/pause/stop individual/all participants and quitting. Show these shortcuts in the bottom of the TUI
 - Implement split function that can be used by Lua script to split data up for each participant
 - When dealing with tables returned by Lua, make sure none of th key-data pairs are `LuaOther` as these will not be converted correctly. Warn user that tables within tables are not yet supported.
 - Make sure things work correctly when events are caught during `_check` execution (for example when the execute button is pressed during an execution)
 - Convert percentage into i32 and vice versa
+- Ensure progress updates aren't sent too frequently (check time since last call in `_progress`)
+- Use the Gague widget to show progress
 
 ### Unfinished Ideas
 - Can we use `AnyLuaValue` type to store tables?
@@ -20,6 +21,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - See if rlua supports tables of tables, if it does migrate to rlua.
 - Do we need to send the name AND endpoint with UI messages?
 - Should the `Panel::participants` bimap use the name or the endpoint as the left key?
+
+## [0.2.12] - 2021-03-03
+### Added
+- List state for selecting participants and showing information
+- `Result` severity for highlighting when a result is returned from execution
+
+### Fixed
+- Pausing and playing while idle will no longer change the status, since participants must inform the host when they pause/unpause
+
+### Removed
+- Actions panel in favour of keyboard shortcuts
 
 ## [0.2.11] - 2021-03-02
 ### Added
