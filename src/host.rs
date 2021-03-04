@@ -47,9 +47,9 @@ impl<'a> Host<'a> {
         lua.openlibs();
 
         match network.listen(Transport::Tcp, server_address) {
-            Ok(_) => println!("TCP Server running at {}", server_address),
+            Ok(_) => message_sender.send(UiEvents::Log(NodeType::Host, format!("Host running at {}", server_address), Severity::Info)).unwrap(),
             Err(e) => return Err(format!("Can not listen at {} - {}", server_address, e))
-        }
+        };
 
 
         Ok(Host {
@@ -193,6 +193,11 @@ impl<'a> Host<'a> {
                                 let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
                                 self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Calculating, endpoint, endpoint_name.clone())).unwrap();
 
+                            },
+                            Message::Stdout(output) => {
+                                let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
+                                self.message_sender.send(UiEvents::Log(NodeType::Participant(endpoint_name.clone()), output, Severity::Stdout)).unwrap();
+
                             }
                             _ => {
 
@@ -287,8 +292,8 @@ impl<'a> Host<'a> {
                     }
                 }
             },
-            Err(_e) => {
-                //println!("Receive error in host - {}", e);
+            Err(e) => {
+                eprintln!("Receive error in Host::check_events() - {}", e);
             }
         }
 

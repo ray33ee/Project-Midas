@@ -116,10 +116,19 @@ impl<'a> Participant<'a> {
                         match message {
                             Message::Code(code) => {
 
+
+
+                                let net_sender = self.network.clone();
+
+                                self.lua.set("_print", hlua::function1(move |message: String| {
+                                    net_sender.send(Message::Stdout(message));
+                                }));
+
                                 //Register the _check function which allows Lua script users to check the
                                 //network and respond to pause/play and stop commands
                                 let receiver = self.message_receiver.clone();
                                 let net_sender = self.network.clone();
+
 
 
                                 self.lua.set("_check", hlua::function0(move ||
@@ -173,9 +182,16 @@ impl<'a> Participant<'a> {
                                 //Register the _progress function which allows Lua script users to send
                                 //data back to the host indicating how much progress the script has made
                                 let net_sender = self.network.clone();
-                                self.lua.set("_progress", hlua::function1(move |prog: f32|
+
+                                let mut last_progress_update = std::time::Instant::now();
+
+                                self.lua.set("_progress", hlua::function2(move |prog: f32, delay: u32|
                                 {
-                                    net_sender.send(Message::Progress(prog)).unwrap();
+                                    if std::time::Instant::now().duration_since(last_progress_update).as_millis() > delay as u128 {
+                                        net_sender.send(Message::Progress(prog)).unwrap();
+                                        last_progress_update = std::time::Instant::now();
+                                    }
+
                                 }));
 
 

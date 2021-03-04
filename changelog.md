@@ -5,15 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### To Do
-- Use a TUI in host.rs to allow user to view the participants, their status, send data, code and commands.
-  - Allow user to control participants and execute code via host
-  - Add shortcuts for play/pause/stop individual/all participants and quitting. Show these shortcuts in the bottom of the TUI
 - Implement split function that can be used by Lua script to split data up for each participant
 - When dealing with tables returned by Lua, make sure none of th key-data pairs are `LuaOther` as these will not be converted correctly. Warn user that tables within tables are not yet supported.
 - Make sure things work correctly when events are caught during `_check` execution (for example when the execute button is pressed during an execution)
-- Convert percentage into i32 and vice versa
-- Ensure progress updates aren't sent too frequently (check time since last call in `_progress`)
+  - Prevent user from executing while threads are still calculating
 - Use the Gague widget to show progress
+- Add picture (or a gif of it executing and pausing) of Host tui to readme
+- Allow user to choose script at runtime
+- Allow scrolling of
+  - Log: Using page up /down
+  - Participant List: Keypress up/down
+  - Use slices to scroll
+  - Add Pageup Pagedown shortcuts to shortcut bar
+- Come up with a color scheme that's not disgusting
+- Find a better way to kill participants than just panicking
 
 ### Unfinished Ideas
 - Can we use `AnyLuaValue` type to store tables?
@@ -21,6 +26,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - See if rlua supports tables of tables, if it does migrate to rlua.
 - Do we need to send the name AND endpoint with UI messages?
 - Should the `Panel::participants` bimap use the name or the endpoint as the left key?
+
+## [0.2.13] - 2021-03-03
+### Added
+- `_print` to allow user to display messages in the Host ui from participants. Can only be called in `execute_code` function
+
+### Changed
+- `_progress` now ensures that the progress update cannot be sent too frequently by choosing a duration in milliseconds between progress updates (users should still minimise how often this function is called though)
+- Since progress must be stored as an integer (to derive Hash for ParticipantInfo) we multiply the percentage by 100 when we store it, to give us 2 decimal places
+- Selecting from a list now shows info in TUI (no need to press enter each time)
+- Updated readme with extra, more helpful information
+- Starting the server now adds an entry to the log
+- All println! calls in host changed to eprintln!
+- We now quit the host properly, without panicking
+- Shortcut added to clear log
 
 ## [0.2.12] - 2021-03-03
 ### Added
@@ -41,6 +60,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Status of participants now added, colours indicate status
 - Errors, warnings and info sent to or created by `Host` are also showed in the Tui
 - Structs and enums for storing information on participants in `Panel` and functions to convert to TUI objects
+- Shortcut bar at bottom of ui showing all the available shortcuts
 
 ### Changed 
 - Updated readme to reflect changes to command line options
@@ -152,7 +172,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Modified `AnyLuaValue` to be serializable 
 
-## Removed
+### Removed
 - We no longer store the incoming data in Host as it is sent directly to Lua context
 
 ## [0.2.0] - 2021-02-19

@@ -84,8 +84,6 @@ pub struct Panel<'a> {
 
     participant_names: Vec<String>,
 
-    selected_widget: i32,
-
     selected_participant: Option<String>,
 
     participants_state: ListState,
@@ -109,14 +107,13 @@ impl<'a> Panel<'a> {
             script_path,
             participants: BiMap::new(),
             participants_state: ListState::default(),
-            selected_widget: 0,
             selected_participant: None,
             participant_names: Vec::new(),
             logs: Vec::new()
         }
     }
 
-    pub fn tick(& mut self) {
+    pub fn tick(& mut self) -> Result<(), ()> {
         //When a button is clicked or an action is invoked, we must send the event via the ui_sender
         if let Ok(true) = poll(Duration::from_secs(0)) {
             match read().unwrap() {
@@ -136,7 +133,7 @@ impl<'a> Panel<'a> {
                             //println!("Play");
                             self.command_sender.send(HostEvent::PlayAll).unwrap();
                         },
-                        crossterm::event::KeyCode::Char('s') => {
+                        crossterm::event::KeyCode::Char('k') => {
                             //host.display_participant_count();
                             //println!("Stop");
                             self.command_sender.send(HostEvent::KillAll).unwrap();
@@ -145,65 +142,39 @@ impl<'a> Panel<'a> {
                             //host.display_participant_count();
                             //println!("Stop");
                             self.terminal.clear().unwrap();
-                            panic!("Ending");
+                            return Err(());
+                        },
+                        crossterm::event::KeyCode::Char('c') => {
+                            self.logs.clear();
                         },
                         crossterm::event::KeyCode::Left => {
-                            self.selected_widget = 0;
+
 
                         },
                         crossterm::event::KeyCode::Right => {
-                            self.selected_widget = 1;
+
                         },
                         crossterm::event::KeyCode::Up => {
-                            match self.selected_widget {
-                                0 => {
-                                    let selected_index = self.participants_state.selected().unwrap_or(0);
+                            let selected_index = self.participants_state.selected().unwrap_or(0);
 
-                                    if !self.participants.is_empty() {
-                                        if selected_index != 0 {
-                                            self.participants_state.select(Some(selected_index - 1));
-                                        }
-                                        else {
-                                            self.participants_state.select(Some(selected_index));
-                                        }
-                                    }
-                                },
-                                1 => {
-
+                            if !self.participants.is_empty() {
+                                if selected_index != 0 {
+                                    self.participants_state.select(Some(selected_index - 1));
                                 }
-                                _ => {}
+                                else {
+                                    self.participants_state.select(Some(selected_index));
+                                }
                             }
                         },
                         crossterm::event::KeyCode::Down => {
-                            match self.selected_widget {
-                                0 => {
-                                    let selected_index = self.participants_state.selected().unwrap_or(0);
-                                    if !self.participants.is_empty() {
-                                        if selected_index != self.participants.len() - 1 {
-                                            self.participants_state.select(Some(selected_index + 1));
-                                        }
-                                    }
-                                },
-                                1 => {
-
+                            let selected_index = self.participants_state.selected().unwrap_or(0);
+                            if !self.participants.is_empty() {
+                                if selected_index != self.participants.len() - 1 {
+                                    self.participants_state.select(Some(selected_index + 1));
                                 }
-                                _ => {}
                             }
-                        },
-                        crossterm::event::KeyCode::Enter => {
-                            match self.selected_widget {
-                                0 => {
-                                    self.selected_participant = match self.participants_state.selected() {
-                                        Some(index) => {
-                                            Some(self.participant_names.get(index).unwrap().clone())
-                                        }
-                                        None => None
-                                    }
-                                },
-                                _ => {}
-                            }
-                        }
 
+                        },
                         _ => {}
                     }
                 }
@@ -211,6 +182,13 @@ impl<'a> Panel<'a> {
             }
         }
 
+        self.selected_participant = match self.participants_state.selected() {
+            Some(index) => match self.participant_names.get(index) {
+                Some(name) => Some(name.clone()),
+                None => None
+            }
+            None => None
+        };
 
         //We must also check ui_event_queue and see if we need to change the UI
         match self.message_receiver.recv_timeout(Duration::from_micros(0)) {
@@ -238,7 +216,7 @@ impl<'a> Panel<'a> {
                 },
                 UiEvents::ParticipantUnregistered(endpoint, name) => {
 
-                    self.logs.insert(0, LogEntry::new(Severity::Info, NodeType::Participant(name.clone()), format!("Client has disconnected.")));
+                    self.logs.insert(0, LogEntry::new(Severity::Warning, NodeType::Participant(name.clone()), format!("Client has disconnected.")));
                     self.participants.remove_by_left(&name);
                     //println!("Client '{}' has disconnected. (endpoint: {})", name, endpoint);
                 },
@@ -248,7 +226,7 @@ impl<'a> Panel<'a> {
                 },
                 UiEvents::ParticipantProgress(endpoint, name, progress) => {
                     let (_, mut info) = self.participants.remove_by_left(&name).unwrap();
-                    info.progress = Some(progress as i32);
+                    info.progress = Some((progress * 100.0f32) as i32);
                     self.participants.insert(name, info);
                     //println!("Client '{}' Progress: {}. (endpoint: {})", name, progress, endpoint);
                 }
@@ -291,14 +269,19 @@ impl<'a> Panel<'a> {
                                              Span::raw("Status:   "),
                                              Span::styled(format!("{:?}", info.status), Style::default().fg(info.status.to_color()))
                             ]),
-                            Spans::from(format!("Progress: {:?}", info.progress)),
+                            Spans::from(format!("Progress: {}",
+                                match info.progress {
+                                    Some(number) => format!("{}%", number as f32 / 100.0f32),
+                                    None => format!("-")
+                                }
+                            )),
                         ])
                     }
-                    None => Text::raw("naut")
+                    None => Text::raw("")
                 }
             }
             None => {
-                Text::raw("naut")
+                Text::raw("")
             }
         };
 
@@ -310,7 +293,8 @@ impl<'a> Panel<'a> {
                 .constraints(
                     [
                         Constraint::Percentage(80),
-                        Constraint::Percentage(20),
+                        Constraint::Percentage(19),
+                        Constraint::Length(1),
                     ].as_ref()
                 )
                 .split(f.size());
@@ -356,15 +340,34 @@ impl<'a> Panel<'a> {
 
 
 
-            let block = Paragraph::new(text)
+            let info = Paragraph::new(text.clone())
                 .block(Block::default().title("Info").borders(Borders::ALL))
                 ;
-            f.render_widget(block, v_chunks[1]);
+            f.render_widget(info, v_chunks[1]);
 
 
+            let shortcuts = Paragraph::new(Text::from(vec![Spans::from(vec![
+                Span::raw("q "),
+                Span::styled("Exit        ", Style::default().fg(Color::Rgb(100, 0, 0))),
+                Span::raw("e "),
+                Span::styled("Execute     ", Style::default().fg(Color::Rgb(100, 0, 0))),
+                Span::raw("p "),
+                Span::styled("Pause       ", Style::default().fg(Color::Rgb(100, 0, 0))),
+                Span::raw("l "),
+                Span::styled("Play        ", Style::default().fg(Color::Rgb(100, 0, 0))),
+                Span::raw("k "),
+                Span::styled("Kill        ", Style::default().fg(Color::Rgb(100, 0, 0))),
+                Span::raw("c "),
+                Span::styled("Clear Log   ", Style::default().fg(Color::Rgb(100, 0, 0))),
+            ])]))
+                .block(Block::default());
+
+            f.render_widget(shortcuts, v_chunks[2]);
 
         }).unwrap();
         self.terminal.autoresize().unwrap();
+
+        Ok(())
 
     }
 }

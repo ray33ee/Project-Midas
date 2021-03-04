@@ -1,5 +1,5 @@
 
-prime = 982451653
+prime = 	961748942
 
 function generate_data(endpoint_index, endpoint_count)
 
@@ -17,6 +17,7 @@ end
 
 function execute_code()
 
+    _print("Completely useless print statement")
 
 	participant_result = {}
 
@@ -26,17 +27,13 @@ function execute_code()
 	lower = global_data.lower
 	upper = global_data.upper
 
-	current = os.clock()
+	--current = os.clock()
 
 	for i = lower,upper,1
 	do
         if i % 100000 == 0 then _check() end
 
-
-	    if os.clock() - current > 1 then
-	        _progress((i - lower) / (upper - lower) * 100)
-	        current = os.clock()
-	    end
+        --if i % 100000 == 0 then _progress((i - lower) / (upper - lower) * 100, 100) end
 
 		if (prime % i == 0 )
 		then
@@ -53,11 +50,12 @@ function execute_code()
 end
 
 function interpret_results()
+    print("Testing")
 	for i,v in pairs(results)
 	do
 	    if (v.divisor ~= 0)
 	    then
-	        print("The number is divisible by ".. v.divisor)
+	        return "The number is divisible by ".. v.divisor
 	    end
 
 	end

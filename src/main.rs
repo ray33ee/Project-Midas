@@ -101,9 +101,7 @@ fn main() {
                         }
                     );
 
-                    loop {
-                        panel.tick();
-                    }
+                    while let Ok(_) = panel.tick() {}
                 },
                 Err(error) => {
                     println!("Host Error - {}", error);
