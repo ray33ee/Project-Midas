@@ -63,17 +63,20 @@ pub enum Severity {
     Warning,
     Error,
     Result,
-    Stdout
+    Stdout,
+    Starting
 }
 
 impl Severity {
     pub fn to_cell(& self) -> Cell {
         match self {
+
+            Severity::Starting => Cell::from("STARTING").style(Style::default().fg(Color::Rgb(108, 186, 133))),
+            Severity::Error => Cell::from("ERROR").style(Style::default().fg(Color::Rgb(212, 65, 67))),
+            Severity::Warning => Cell::from("WARNING").style(Style::default().fg(Color::Rgb(207, 114, 65))),
+            Severity::Result => Cell::from("RESULT").style(Style::default().fg(Color::Rgb(221, 183, 45))),
+            Severity::Stdout => Cell::from("STDOUT").style(Style::default().fg(Color::Rgb(178, 214, 90))),
             Severity::Info => Cell::from("INFO").style(Style::default()),
-            Severity::Warning => Cell::from("WARNING").style(Style::default().fg(Color::Rgb(255, 255, 0))),
-            Severity::Error => Cell::from("ERROR").style(Style::default().fg(Color::Rgb(255, 0, 0))),
-            Severity::Result => Cell::from("RESULT").style(Style::default().fg(Color::Rgb(255, 0, 100))),
-            Severity::Stdout => Cell::from("STDOUT").style(Style::default().fg(Color::Rgb(0, 255, 128))),
         }
     }
 }
@@ -86,8 +89,8 @@ pub enum NodeType {
 impl NodeType {
     pub fn to_cell(& self) -> Cell {
         match self {
-            NodeType::Host => Cell::from("Host").style(Style::default().fg(Color::Rgb(0, 255, 255))),
-            NodeType::Participant(name) => Cell::from(name.as_str()).style(Style::default().fg(Color::Rgb(255, 0, 255)).add_modifier(Modifier::ITALIC)),
+            NodeType::Host => Cell::from("Host").style(Style::default().fg(Color::Rgb(37, 158, 175))),
+            NodeType::Participant(name) => Cell::from(name.as_str()).style(Style::default().fg(Color::Rgb(127, 82, 198)).add_modifier(Modifier::ITALIC)),
         }
     }
 }
@@ -95,16 +98,12 @@ impl NodeType {
 pub enum UiEvents {
     ChangeStatusTo(ParticipantStatus, Endpoint, String),
 
-    ParticipantProgress(Endpoint, String, f32),
+    ParticipantProgress(String, f32),
 
     Log(NodeType, String, Severity),
 
-    /*ParticipantError(Endpoint, String, String),
-    ParticipantWarning(Endpoint, String, String),
-    ParticipantWhisper(Endpoint, String, String),*/
-
     ParticipantRegistered(Endpoint, String),
-    ParticipantUnregistered(Endpoint, String),
+    ParticipantUnregistered(String),
 
     InterpretResultsReturn(String),
 
@@ -121,6 +120,8 @@ pub enum HostEvent {
     Execute,
 
     Begin(String),
+
+    RemoveAll,
 
     PlayAll,
     PauseAll,

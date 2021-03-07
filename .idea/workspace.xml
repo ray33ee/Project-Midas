@@ -157,7 +157,7 @@
       <command value="cargo +nightly test" />
     </option>
   </component>
-  <component name="RunManager" selected="Cargo.Release Compile">
+  <component name="RunManager" selected="Cargo.Debug Compile">
     <configuration name="Debug Compile" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
       <option name="command" value="+nightly build" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />

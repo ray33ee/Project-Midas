@@ -9,7 +9,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - When dealing with tables returned by Lua, make sure none of th key-data pairs are `LuaOther` as these will not be converted correctly. Warn user that tables within tables are not yet supported.
 - Make sure things work correctly when events are caught during `_check` execution (for example when the execute button is pressed during an execution)
   - Prevent user from executing while threads are still calculating
-- Use the Gague widget to show progress
 - Add picture (or a gif of it executing and pausing) of Host tui to readme
 - Allow user to choose script at runtime
 - Allow scrolling of
@@ -17,15 +16,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Participant List: Keypress up/down
   - Use slices to scroll
   - Add Pageup Pagedown shortcuts to shortcut bar
-- Come up with a color scheme that's not disgusting
-  - Look up color schemes and palettes
+- Include leading zeros when naming threads (to ensure threads can be ordered alphabetically)
+- Upgrade to messages-io `0.10.0`
+- Offer native binaries for windows & Linux
+  - Make sure midas works on Linux
+- Make sure that if generate_data fails, then execution stops correctly.  
 
 ### Unfinished Ideas
 - Can we use `AnyLuaValue` type to store tables?
   - Experiment with the `LuaArray` option to see if we can use this as a table
 - See if rlua supports tables of tables, if it does migrate to rlua.
-- Do we need to send the name AND endpoint with UI messages?
-- Should the `Panel::participants` bimap use the name or the endpoint as the left key?
+- Use the Gague widget to show progress
+
+## [0.2.15] - 2021-03-07
+
+### Added
+- Decent looking color palette
+- `Starting` Severity for when we start execution
+
+### Fixed
+- Before we quit we remove all endpoints to avoid panic in thread 'message-io: tcp-adapter'
+- Cleared warnings
+
+### Removed
+- We no longer print log message when a client connects (as a connecting client could be a test to determine whether to connect the real participants)
+- Removed old commented code
+
+### Changed
+- Highlighting now changes background colour of highlighted text to dark grey
+- We now only send the endpoint AND name in messages that need it
+
+
 
 ## [0.2.14] - 2021-03-04
 ### Added
@@ -36,6 +57,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Before `Participant` struct connects, we check to make sure a host is available. we do this by creating a temporary client to connect to host.
 - When a device disconnects, we make sure it has registered before we try and remove it.
 - Participant will now sit and wait until the host is available
+
+### Fixed
+- When the network monitor thread call to recv fails, the thread exits
 
 ## [0.2.13] - 2021-03-03
 ### Added

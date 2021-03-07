@@ -128,29 +128,23 @@ impl<'a> Panel<'a> {
                 Event::Key(key_event) => {
                     match key_event.code {
                         crossterm::event::KeyCode::Char('e') => {
-                            //host.start_participants(script_path);
                             self.command_sender.send(HostEvent::Begin(String::from(self.script_path))).unwrap();
                         },
                         crossterm::event::KeyCode::Char('p') => {
-                            //host.display_participant_count();
-                            //println!("Pause");
                             self.command_sender.send(HostEvent::PauseAll).unwrap();
                         },
                         crossterm::event::KeyCode::Char('l') => {
-                            //host.display_participant_count();
-                            //println!("Play");
                             self.command_sender.send(HostEvent::PlayAll).unwrap();
                         },
                         crossterm::event::KeyCode::Char('k') => {
-                            //host.display_participant_count();
-                            //println!("Stop");
                             self.command_sender.send(HostEvent::KillAll).unwrap();
                             self.logs.insert(0, LogEntry::new(Severity::Info, NodeType::Host, format!("Terminating all participants.")));
 
                         },
                         crossterm::event::KeyCode::Char('q') => {
-                            //host.display_participant_count();
-                            //println!("Stop");
+
+
+                            self.command_sender.send(HostEvent::RemoveAll).unwrap();
                             self.terminal.clear().unwrap();
                             return Err(());
                         },
@@ -213,36 +207,29 @@ impl<'a> Panel<'a> {
 
                 },
                 UiEvents::Log(node_type, message, severity) => {
-                    /*let (_, mut info) = self.participants.remove_by_left(&name).unwrap();
-                    info.logs.insert(0, (severity, message));
-                    self.participants.insert(name, info);*/
 
                     self.logs.insert(0, LogEntry::new(severity, node_type, message));
                 }
 
                 UiEvents::ParticipantRegistered(endpoint, name) => {
                     self.participants.insert(name, ParticipantInfo::new(endpoint));
-                    //println!("Client '{}' has connected. (endpoint: {})", name, endpoint);
                 },
-                UiEvents::ParticipantUnregistered(endpoint, name) => {
+                UiEvents::ParticipantUnregistered( name) => {
 
                     self.logs.insert(0, LogEntry::new(Severity::Warning, NodeType::Participant(name.clone()), format!("Client has disconnected.")));
                     self.participants.remove_by_left(&name);
-                    //println!("Client '{}' has disconnected. (endpoint: {})", name, endpoint);
                 },
                 UiEvents::InterpretResultsReturn(return_message) => {
-                    //println!("All participants finished. interpret_results return code: {}", return_message);
                     self.logs.insert(0, LogEntry::new(Severity::Result, NodeType::Host, return_message));
                 },
-                UiEvents::ParticipantProgress(endpoint, name, progress) => {
+                UiEvents::ParticipantProgress(name, progress) => {
                     let (_, mut info) = self.participants.remove_by_left(&name).unwrap();
                     info.progress = Some((progress * 100.0f32) as i32);
                     self.participants.insert(name, info);
-                    //println!("Client '{}' Progress: {}. (endpoint: {})", name, progress, endpoint);
                 }
             },
             Err(_e) => {
-                //println!("Receive error in panel - {}", e);
+
             }
         }
 
@@ -322,8 +309,11 @@ impl<'a> Panel<'a> {
             let participant_list = List::new(participant_items)
                 .block(Block::default().title("Participants").borders(Borders::ALL))
                 .style(Style::default().fg(Color::White))
-                .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
-                .highlight_symbol(">>");
+
+                .highlight_style(Style::default()
+                    .add_modifier(Modifier::ITALIC)
+                    .bg(Color::Rgb(50, 50, 50)))
+                .highlight_symbol("");
 
 
             f.render_stateful_widget(participant_list, h_chunks[0], state);
@@ -331,15 +321,13 @@ impl<'a> Panel<'a> {
             let log_table = Table::new(messages_items)
                 .header(
                     Row::new(vec!["Time", "Level", "Target", "Message"])
-                        .style(Style::default().fg(Color::Rgb(240, 160, 0)))
+                        .style(Style::default().fg(Color::Rgb(229, 228, 226)))
                         .bottom_margin(1)
                 )
-                .widths(&[Constraint::Length(19), Constraint::Length(7), Constraint::Length(12), Constraint::Length(500)])
+                .widths(&[Constraint::Length(19), Constraint::Length(9), Constraint::Length(12), Constraint::Length(500)])
                 .column_spacing(1)
                 .block(Block::default().title("Logs").borders(Borders::ALL))
-                .style(Style::default().fg(Color::White))
-                .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
-                .highlight_symbol(">>").style(Style::default().fg(Color::White));
+                .style(Style::default().fg(Color::White));
 
             f.render_widget(log_table, h_chunks[1]);
 
@@ -350,17 +338,17 @@ impl<'a> Panel<'a> {
 
             let shortcuts = Paragraph::new(Text::from(vec![Spans::from(vec![
                 Span::raw("q "),
-                Span::styled("Exit        ", Style::default().fg(Color::Rgb(100, 0, 0))),
+                Span::styled("Exit        ", Style::default().fg(Color::Rgb(58, 47, 77))),
                 Span::raw("e "),
-                Span::styled("Execute     ", Style::default().fg(Color::Rgb(100, 0, 0))),
+                Span::styled("Execute     ", Style::default().fg(Color::Rgb(58, 47, 77))),
                 Span::raw("p "),
-                Span::styled("Pause       ", Style::default().fg(Color::Rgb(100, 0, 0))),
+                Span::styled("Pause       ", Style::default().fg(Color::Rgb(58, 47, 77))),
                 Span::raw("l "),
-                Span::styled("Play        ", Style::default().fg(Color::Rgb(100, 0, 0))),
+                Span::styled("Play        ", Style::default().fg(Color::Rgb(58, 47, 77))),
                 Span::raw("k "),
-                Span::styled("Kill        ", Style::default().fg(Color::Rgb(100, 0, 0))),
+                Span::styled("Kill        ", Style::default().fg(Color::Rgb(58, 47, 77))),
                 Span::raw("c "),
-                Span::styled("Clear Log   ", Style::default().fg(Color::Rgb(100, 0, 0))),
+                Span::styled("Clear Log   ", Style::default().fg(Color::Rgb(58, 47, 77))),
             ])])).block(Block::default());
 
             f.render_widget(shortcuts, v_chunks[2]);

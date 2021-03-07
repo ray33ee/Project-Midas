@@ -66,7 +66,7 @@ impl<'a> Host<'a> {
 
     pub fn start_participants(& mut self, path: &str) {
 
-        self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Starting calculations."), Severity::Info)).unwrap();
+        self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Starting calculations."), Severity::Starting)).unwrap();
 
         use std::fs::File;
 
@@ -117,12 +117,13 @@ impl<'a> Host<'a> {
                                     self.message_sender.send(UiEvents::ParticipantRegistered(endpoint, name.clone())).unwrap();
                                     //self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Idle, endpoint, name)).unwrap();
 
+
                                 }
                             },
                             Message::Unregister => {
                                 {
                                     let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                                    self.message_sender.send(UiEvents::ParticipantUnregistered(endpoint, endpoint_name.clone())).unwrap();
+                                    self.message_sender.send(UiEvents::ParticipantUnregistered(endpoint_name.clone())).unwrap();
                                 }
                                 self.participants.remove_by_right(&endpoint);
                             },
@@ -187,7 +188,7 @@ impl<'a> Host<'a> {
                             },
                             Message::Progress(progress) => {
                                 let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                                self.message_sender.send(UiEvents::ParticipantProgress(endpoint, endpoint_name.clone(),progress)).unwrap();
+                                self.message_sender.send(UiEvents::ParticipantProgress(endpoint_name.clone(),progress)).unwrap();
 
                             },
                             Message::Paused => {
@@ -211,9 +212,9 @@ impl<'a> Host<'a> {
                             }
                         }
                     }
-                    NetEvent::AddedEndpoint(endpoint) => {
+                    NetEvent::AddedEndpoint(_endpoint) => {
                         //Client has connected to the host, but at this stage has not yet registered
-                        self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Client added: {}", endpoint), Severity::Info)).unwrap();
+                        //self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Client added: {}", endpoint), Severity::Info)).unwrap();
 
                     },
                     NetEvent::RemovedEndpoint(endpoint) => {
@@ -222,7 +223,7 @@ impl<'a> Host<'a> {
                         {
                             Some(endpoint_name) => {
 
-                                self.message_sender.send(UiEvents::ParticipantUnregistered(endpoint, endpoint_name.clone())).unwrap();
+                                self.message_sender.send(UiEvents::ParticipantUnregistered(endpoint_name.clone())).unwrap();
 
                                 self.participants.remove_by_right(&endpoint);
                             }
@@ -262,40 +263,33 @@ impl<'a> Host<'a> {
                 },
                 HostEvent::Pause(endpoint) => {
                     self.network.send(endpoint, Message::Pause);
-                    //let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                    //self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Paused, endpoint, endpoint_name.clone())).unwrap();
 
                 },
                 HostEvent::Play(endpoint) => {
                     self.network.send(endpoint, Message::Play);
-                    //let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                    //self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Calculating, endpoint, endpoint_name.clone())).unwrap();
 
                 },
                 HostEvent::Kill(endpoint) => {
                     self.network.send(endpoint, Message::Kill);
                 },
                 HostEvent::Execute => {
-                    for (name, endpoint) in self.participants.iter() {
+                    for (_, endpoint) in self.participants.iter() {
                         self.network.send(*endpoint, Message::Execute);
-                        //self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Calculating, *endpoint, name.clone())).unwrap();
-                    }
+                        }
                 },
                 HostEvent::Begin(path) => {
                     self.start_participants(path.as_str());
                 },
 
                 HostEvent::PlayAll => {
-                    for (name, endpoint) in self.participants.iter() {
-                        //self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Calculating, *endpoint, name.clone())).unwrap();
+                    for (_, endpoint) in self.participants.iter() {
                         self.network.send(*endpoint, Message::Play);
 
                     }
                 },
 
                 HostEvent::PauseAll => {
-                    for (name, endpoint) in self.participants.iter() {
-                        //self.message_sender.send(UiEvents::ChangeStatusTo(ParticipantStatus::Paused, *endpoint, name.clone())).unwrap();
+                    for (_, endpoint) in self.participants.iter() {
                         self.network.send(*endpoint, Message::Pause);
 
                     }
@@ -305,7 +299,13 @@ impl<'a> Host<'a> {
                     for (_, endpoint) in self.participants.iter() {
                         self.network.send(*endpoint, Message::Kill);
                     }
-                }
+                },
+
+                HostEvent::RemoveAll => {
+                    for (_, endpoint) in self.participants.iter() {
+                        self.network.remove_resource(endpoint.resource_id());
+                    }
+                },
             },
             Err(e) => {
                 eprintln!("Receive error in Host::check_events() - {}", e);

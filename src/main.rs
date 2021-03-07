@@ -127,10 +127,10 @@ fn main() {
 
             loop
             {
-                println!("Searching for host");
+                println!("Searching for host...");
 
                 {
-                    let mut network = Network::new(move |net_event: NetEvent<()>| {});
+                    let mut network = Network::new(move |_: NetEvent<()>| {});
 
 
                     while let Err(_) = network.connect(Transport::Tcp, ip_address) {
@@ -161,7 +161,7 @@ fn main() {
                     }
                 }).unwrap();
 
-                println!("Finished.");
+                println!("Disconnected.");
 
 
             }

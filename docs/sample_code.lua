@@ -1,10 +1,13 @@
 
-prime = 	961748942
+prime = 	96174894
 
 function generate_data(endpoint_index, endpoint_count)
 
+    if endpoint_index == 0 then _print("Script Version 0.1.1") end
 
 	data = {}
+
+	thing = stuff()
 
 	upper = prime --math.floor(math.sqrt(prime))
 	width = math.floor((upper - 2) / endpoint_count)
@@ -18,6 +21,7 @@ end
 
 function execute_code()
 
+
 	participant_result = {}
 
 	participant_result.lower = global_data.lower
@@ -26,11 +30,12 @@ function execute_code()
 	lower = global_data.lower
 	upper = global_data.upper
 
+
 	for i = lower,upper,1
 	do
-        --if i % 100000 == 0 then _check() end
+        if i % 100000 == 0 then _check() end
 
-        --if i % 100000 == 0 then _progress((i - lower) / (upper - lower) * 100, 1000) end
+        if i % 100000 == 0 then _progress((i - lower) / (upper - lower) * 100, 1000) end
 
 		if (prime % i == 0 )
 		then
@@ -41,6 +46,7 @@ function execute_code()
 	end
 
 	participant_result.divisor = 0
+
 
 	return participant_result
 

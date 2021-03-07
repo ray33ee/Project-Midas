@@ -7,7 +7,6 @@ use crossbeam_channel::{Sender, Receiver, unbounded, RecvTimeoutError};
 
 use std::thread;
 use std::time::Duration;
-use std::thread::JoinHandle;
 
 pub struct Participant<'a> {
 
@@ -15,8 +14,6 @@ pub struct Participant<'a> {
 
     //message_sender: Sender<NetEvent<Message>>,
     message_receiver: Receiver<NetEvent<Message>>,
-
-    network_monitor: JoinHandle<()>,
 
     lua: Lua<'a>,
 }
@@ -49,7 +46,7 @@ impl<'a> Participant<'a> {
 
                 // The following thread monitors the net_sender/net_receiver channel and sends any data
                 // it receives accross the network. This allows us to have multiple senders to the network
-                let network_monitor: JoinHandle<()> = thread::spawn(move ||
+                thread::spawn(move ||
                     {
 
 
@@ -58,8 +55,7 @@ impl<'a> Participant<'a> {
                                 Ok(message) => {
                                     network.send(host_endpoint, message);
                                 }
-                                Err(e) => {
-                                    println!("Receiver recv Err - {}", e);
+                                Err(_e) => {
                                     break;
                                 }
                             }
@@ -73,11 +69,10 @@ impl<'a> Participant<'a> {
                 Ok(Participant {
                     network: net_sender,
                     message_receiver,
-                    network_monitor,
                     lua
                 })
             }
-            Err(e) => {
+            Err(_e) => {
                 Err(())
                 //panic!("Could not connect to {} - {}", server_address, e);
             }
