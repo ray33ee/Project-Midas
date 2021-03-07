@@ -10,7 +10,7 @@ use crossterm::event::{read, Event, poll};
 use std::io;
 use tui::Terminal;
 use tui::backend::CrosstermBackend;
-use tui::widgets::{Block, Borders, ListItem, List, Row, Table, Cell, ListState, Paragraph};
+use tui::widgets::{Block, Borders, ListItem, List, Row, Table, Cell, ListState, Paragraph, TableState};
 use tui::layout::{Layout, Constraint, Direction};
 use tui::style::{Modifier, Color, Style};
 use tui::text::{Spans, Span};
@@ -88,6 +88,10 @@ pub struct Panel<'a> {
 
     participants_state: ListState,
 
+    top_scroll_log_item: usize, //Index of the log item to show at the top
+
+
+
     logs: Vec<LogEntry>,
 
 }
@@ -110,6 +114,7 @@ impl<'a> Panel<'a> {
             participants_state: ListState::default(),
             selected_participant: None,
             participant_names: Vec::new(),
+            top_scroll_log_item: 0,
             logs: Vec::new()
         }
     }
@@ -150,6 +155,7 @@ impl<'a> Panel<'a> {
                         },
                         crossterm::event::KeyCode::Char('c') => {
                             self.logs.clear();
+                            self.top_scroll_log_item = 0;
                         },
                         crossterm::event::KeyCode::Left => {
 
@@ -159,23 +165,35 @@ impl<'a> Panel<'a> {
 
                         },
                         crossterm::event::KeyCode::Up => {
-                            let selected_index = self.participants_state.selected().unwrap_or(0);
+                            let selected_index = self.participants_state.selected().unwrap();
 
                             if !self.participants.is_empty() {
                                 if selected_index != 0 {
                                     self.participants_state.select(Some(selected_index - 1));
-                                }
-                                else {
-                                    self.participants_state.select(Some(selected_index));
+                                } else {
+                                    self.participants_state.select(Some(self.participant_names.len() - 1));
                                 }
                             }
                         },
                         crossterm::event::KeyCode::Down => {
-                            let selected_index = self.participants_state.selected().unwrap_or(0);
+                            let selected_index = self.participants_state.selected().unwrap();
                             if !self.participants.is_empty() {
-                                if selected_index != self.participants.len() - 1 {
-                                    self.participants_state.select(Some(selected_index + 1));
-                                }
+                                self.participants_state.select(Some(selected_index + 1));
+                            }
+                        },
+                        crossterm::event::KeyCode::PageUp => {
+                            if self.top_scroll_log_item < 10 {
+                                self.top_scroll_log_item = 0;
+                            } else {
+                                self.top_scroll_log_item -= 10;
+
+                            }
+
+
+                        },
+                        crossterm::event::KeyCode::PageDown => {
+                            if self.top_scroll_log_item + 10 < self.logs.len() {
+                                self.top_scroll_log_item += 10;
                             }
 
                         },
@@ -233,9 +251,6 @@ impl<'a> Panel<'a> {
             }
         }
 
-        let messages_items: Vec<_> = self.logs.iter().map(|entry| {
-              entry.to_listitem()
-          }).collect();
 
         self.participant_names = self.participants.iter()
             .map(|(string, _)| string.clone())
@@ -253,7 +268,10 @@ impl<'a> Panel<'a> {
             .collect();
 
 
+        let highlighted_item = self.participants_state.selected().clone();
+
         let state = & mut self.participants_state;
+        //let state = & mut self.participants_state;
 
         let text = match &self.selected_participant {
             Some(name) => {
@@ -267,10 +285,10 @@ impl<'a> Panel<'a> {
                                              Span::styled(format!("{:?}", info.status), Style::default().fg(info.status.to_color()))
                             ]),
                             Spans::from(format!("Progress: {}",
-                                match info.progress {
-                                    Some(number) => format!("{}%", number as f32 / 100.0f32),
-                                    None => format!("-")
-                                }
+                                                match info.progress {
+                                                    Some(number) => format!("{}%", number as f32 / 100.0f32),
+                                                    None => format!("-")
+                                                }
                             )),
                         ])
                     }
@@ -281,6 +299,14 @@ impl<'a> Panel<'a> {
                 Text::raw("")
             }
         };
+
+
+        let top_scroll = self.top_scroll_log_item;
+
+        let messages_items: Vec<_> = self.logs.iter().map(|entry| {
+            entry.to_listitem()
+        }).collect();
+
 
         //Generate the UI
         self.terminal.draw(|f| {
@@ -311,14 +337,18 @@ impl<'a> Panel<'a> {
                 .style(Style::default().fg(Color::White))
 
                 .highlight_style(Style::default()
-                    .add_modifier(Modifier::ITALIC)
                     .bg(Color::Rgb(50, 50, 50)))
                 .highlight_symbol("");
 
 
+
+            let messages_slice = &messages_items[top_scroll..];
+
+
+
             f.render_stateful_widget(participant_list, h_chunks[0], state);
 
-            let log_table = Table::new(messages_items)
+            let log_table = Table::new(messages_slice.to_vec())
                 .header(
                     Row::new(vec!["Time", "Level", "Target", "Message"])
                         .style(Style::default().fg(Color::Rgb(229, 228, 226)))
@@ -338,23 +368,28 @@ impl<'a> Panel<'a> {
 
             let shortcuts = Paragraph::new(Text::from(vec![Spans::from(vec![
                 Span::raw("q "),
-                Span::styled("Exit        ", Style::default().fg(Color::Rgb(58, 47, 77))),
+                Span::styled("Exit             ", Style::default().fg(Color::Rgb(58, 47, 77))),
                 Span::raw("e "),
-                Span::styled("Execute     ", Style::default().fg(Color::Rgb(58, 47, 77))),
+                Span::styled("Execute          ", Style::default().fg(Color::Rgb(58, 47, 77))),
                 Span::raw("p "),
-                Span::styled("Pause       ", Style::default().fg(Color::Rgb(58, 47, 77))),
+                Span::styled("Pause            ", Style::default().fg(Color::Rgb(58, 47, 77))),
                 Span::raw("l "),
-                Span::styled("Play        ", Style::default().fg(Color::Rgb(58, 47, 77))),
+                Span::styled("Play             ", Style::default().fg(Color::Rgb(58, 47, 77))),
                 Span::raw("k "),
-                Span::styled("Kill        ", Style::default().fg(Color::Rgb(58, 47, 77))),
+                Span::styled("Kill             ", Style::default().fg(Color::Rgb(58, 47, 77))),
                 Span::raw("c "),
-                Span::styled("Clear Log   ", Style::default().fg(Color::Rgb(58, 47, 77))),
+                Span::styled("Clear Log        ", Style::default().fg(Color::Rgb(58, 47, 77))),
+                Span::raw("PgDn "),
+                Span::styled("Scroll down log  ", Style::default().fg(Color::Rgb(58, 47, 77))),
+                Span::raw("PgUp "),
+                Span::styled("Scroll up log    ", Style::default().fg(Color::Rgb(58, 47, 77))),
             ])])).block(Block::default());
 
             f.render_widget(shortcuts, v_chunks[2]);
 
         }).unwrap();
         self.terminal.autoresize().unwrap();
+
 
         Ok(())
 

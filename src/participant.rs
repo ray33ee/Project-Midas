@@ -105,7 +105,8 @@ impl<'a> Participant<'a> {
                 Some(message)
             },
             NetEvent::RemovedEndpoint(_endpoint) => {
-                panic!("Server Disconnected. See Host for more details.");
+                println!("Server Disconnected. See Host for more details.");
+                std::process::exit(0);
             }
             _ => {
                 None

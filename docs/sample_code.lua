@@ -7,7 +7,6 @@ function generate_data(endpoint_index, endpoint_count)
 
 	data = {}
 
-	thing = stuff()
 
 	upper = prime --math.floor(math.sqrt(prime))
 	width = math.floor((upper - 2) / endpoint_count)
@@ -21,6 +20,7 @@ end
 
 function execute_code()
 
+    _print("Message from script")
 
 	participant_result = {}
 

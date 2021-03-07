@@ -5,28 +5,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### To Do
-- Implement split function that can be used by Lua script to split data up for each participant
 - When dealing with tables returned by Lua, make sure none of th key-data pairs are `LuaOther` as these will not be converted correctly. Warn user that tables within tables are not yet supported.
 - Make sure things work correctly when events are caught during `_check` execution (for example when the execute button is pressed during an execution)
   - Prevent user from executing while threads are still calculating
 - Add picture (or a gif of it executing and pausing) of Host tui to readme
 - Allow user to choose script at runtime
-- Allow scrolling of
-  - Log: Using page up /down
-  - Participant List: Keypress up/down
-  - Use slices to scroll
-  - Add Pageup Pagedown shortcuts to shortcut bar
-- Include leading zeros when naming threads (to ensure threads can be ordered alphabetically)
 - Upgrade to messages-io `0.10.0`
-- Offer native binaries for windows & Linux
-  - Make sure midas works on Linux
-- Make sure that if generate_data fails, then execution stops correctly.  
+- Make sure that if `generate_data` fails, then execution stops correctly. 
+- Redirect `stderr` to a log file, but only in host mode
 
 ### Unfinished Ideas
 - Can we use `AnyLuaValue` type to store tables?
   - Experiment with the `LuaArray` option to see if we can use this as a table
 - See if rlua supports tables of tables, if it does migrate to rlua.
 - Use the Gague widget to show progress
+
+## [0.2.16] - 2021-03-07
+
+### Added
+- Scroll up/down added for log events
+- PgUp and PgDn shortcuts added to shortcut bar
+- Added binaries to SourceForge and added entry to readme
+
+### Changed
+- Threads are numbered with leading zeros when named
+- Bounds checking on participant list removed to make use of TUI's built in scrolling for participant list
 
 ## [0.2.15] - 2021-03-07
 

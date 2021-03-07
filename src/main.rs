@@ -153,7 +153,7 @@ fn main() {
                                     if thread_count == 1 {
                                         format!("{}", participant_name)
                                     } else {
-                                        format!("{}-{}", participant_name, i)
+                                        format!("{}-{:03}", participant_name, i)
                                     }, ip_address).unwrap();
 
                                 while let Ok(_) = participant.tick() {}

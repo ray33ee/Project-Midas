@@ -5,6 +5,8 @@ By running Midas on a host device then assigning participants we can create a di
 participant are passed using [message-io](https://docs.rs/message-io/0.8.1/message_io/) and code is executed using [hlua](https://docs.rs/hlua/0.4.1/hlua/).
 These two combined allow the host to send code to participants for them to execute. 
 
+![Screenshot](https://imgur.com/AI14BqC)
+
 ## Why?
 
 There is no shortage of distributed computing models, and each model has many implementations. If power and performance is
@@ -93,6 +95,10 @@ cargo +nightly build --release
 Then navigate to the `target/release` folder and execute `midas` with the command options as stated above
 
 We also use the [available_concurrency](https://doc.rust-lang.org/std/thread/fn.available_concurrency.html) function which is currently nightly only.
+
+## Native binaries
+
+Alternatively you can find compiled binaries for midas [here](https://sourceforge.net/projects/project-midas/)
 
 ## Host longevity
 
