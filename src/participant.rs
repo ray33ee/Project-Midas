@@ -7,6 +7,7 @@ use crossbeam_channel::{Sender, Receiver, unbounded, RecvTimeoutError};
 
 use std::thread;
 use std::time::Duration;
+use std::thread::JoinHandle;
 
 pub struct Participant<'a> {
 
@@ -15,15 +16,22 @@ pub struct Participant<'a> {
     //message_sender: Sender<NetEvent<Message>>,
     message_receiver: Receiver<NetEvent<Message>>,
 
+    network_monitor: JoinHandle<()>,
+
     lua: Lua<'a>,
+}
+
+impl<'a> Drop for Participant<'a> {
+    fn drop(&mut self) {
+
+    }
 }
 
 impl<'a> Participant<'a> {
 
-    pub fn new(name: String, server_address: &str) -> Self {
+    pub fn new(name: String, server_address: &str) -> Result<Self, ()> {
 
         let (message_sender, message_receiver) = unbounded();
-
 
         let mut lua = Lua::new();
 
@@ -41,7 +49,7 @@ impl<'a> Participant<'a> {
 
                 // The following thread monitors the net_sender/net_receiver channel and sends any data
                 // it receives accross the network. This allows us to have multiple senders to the network
-                thread::spawn(move ||
+                let network_monitor: JoinHandle<()> = thread::spawn(move ||
                     {
 
 
@@ -50,8 +58,9 @@ impl<'a> Participant<'a> {
                                 Ok(message) => {
                                     network.send(host_endpoint, message);
                                 }
-                                Err(_) => {
-
+                                Err(e) => {
+                                    println!("Receiver recv Err - {}", e);
+                                    break;
                                 }
                             }
                         }
@@ -61,14 +70,16 @@ impl<'a> Participant<'a> {
                 // Register the participant
                 net_sender.send(Message::Register(String::from(name))).unwrap();
 
-                Participant {
+                Ok(Participant {
                     network: net_sender,
                     message_receiver,
+                    network_monitor,
                     lua
-                }
+                })
             }
             Err(e) => {
-                panic!("Could not connect to {} - {}", server_address, e);
+                Err(())
+                //panic!("Could not connect to {} - {}", server_address, e);
             }
         }
 
@@ -121,7 +132,7 @@ impl<'a> Participant<'a> {
                                 let net_sender = self.network.clone();
 
                                 self.lua.set("_print", hlua::function1(move |message: String| {
-                                    net_sender.send(Message::Stdout(message));
+                                    net_sender.send(Message::Stdout(message)).unwrap();
                                 }));
 
                                 //Register the _check function which allows Lua script users to check the
@@ -139,8 +150,9 @@ impl<'a> Participant<'a> {
                                         //println!("Check start");
                                         match Self::recv_message(refy, Some(0)) {
                                             Some(msg) => match msg {
-                                                Message::Stop => {
-                                                    panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
+                                                Message::Kill => {
+                                                    std::process::exit(0);
+                                                    //panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
                                                 }
                                                 Message::Pause => {
 
@@ -148,8 +160,9 @@ impl<'a> Participant<'a> {
                                                     loop {
                                                         match Self::recv_message(refy, None) {
                                                             Some(ms) => match ms {
-                                                                Message::Stop => {
-                                                                    panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
+                                                                Message::Kill => {
+                                                                    std::process::exit(0);
+                                                                    //panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
                                                                 }
                                                                 Message::Play => {
 
@@ -213,8 +226,10 @@ impl<'a> Participant<'a> {
                             },
                             Message::Pause => {},
                             Message::Play => {},
-                            Message::Stop => {
-                                panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
+                            Message::Stop => {},
+                            Message::Kill => {
+                                std::process::exit(0);
+                                //panic!("This is a cheaty way to kill the thread, but fuck it, we'll do it live!");
                             },
                             Message::Execute => {
 

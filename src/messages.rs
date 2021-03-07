@@ -18,6 +18,7 @@ pub enum Message {
     Play,
     Pause,
     Stop,
+    Kill,
 
     /* Participant to Host */
 

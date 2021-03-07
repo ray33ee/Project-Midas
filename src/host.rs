@@ -76,6 +76,12 @@ impl<'a> Host<'a> {
 
         fh.read_to_string(& mut source_code).unwrap();
 
+        let message_sender = self.message_sender.clone();
+
+        self.lua.set("_print", hlua::function1(move |message: String| {
+            message_sender.send(UiEvents::Log(NodeType::Host, message, Severity::Stdout)).unwrap();
+        }));
+
         match self.lua.execute::<()>(source_code.as_str()) {
             Ok(_) => {}
             Err(e) => { panic!("DEPRECIATED LuaError: {:?}", e); }
@@ -212,11 +218,20 @@ impl<'a> Host<'a> {
                     },
                     NetEvent::RemovedEndpoint(endpoint) => {
                         //Client disconnected without unregistering
+                        match self.participants.get_by_right(&endpoint)
                         {
-                            let endpoint_name = self.participants.get_by_right(&endpoint).unwrap();
-                            self.message_sender.send(UiEvents::ParticipantUnregistered(endpoint, endpoint_name.clone())).unwrap();
+                            Some(endpoint_name) => {
+
+                                self.message_sender.send(UiEvents::ParticipantUnregistered(endpoint, endpoint_name.clone())).unwrap();
+
+                                self.participants.remove_by_right(&endpoint);
+                            }
+                            None => {
+
+                            }
                         }
-                        self.participants.remove_by_right(&endpoint);
+
+
                     }
                     NetEvent::DeserializationError(_) => (),
                 },
@@ -258,7 +273,7 @@ impl<'a> Host<'a> {
 
                 },
                 HostEvent::Kill(endpoint) => {
-                    self.network.send(endpoint, Message::Stop);
+                    self.network.send(endpoint, Message::Kill);
                 },
                 HostEvent::Execute => {
                     for (name, endpoint) in self.participants.iter() {
@@ -288,7 +303,7 @@ impl<'a> Host<'a> {
 
                 HostEvent::KillAll => {
                     for (_, endpoint) in self.participants.iter() {
-                        self.network.send(*endpoint, Message::Stop);
+                        self.network.send(*endpoint, Message::Kill);
                     }
                 }
             },

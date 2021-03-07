@@ -375,7 +375,7 @@ dependencies = [
 
 [[package]]
 name = "midas"
-version = "0.2.13"
+version = "0.2.14"
 dependencies = [
  "bimap",
  "chrono",

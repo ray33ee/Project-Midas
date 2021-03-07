@@ -100,6 +100,7 @@ impl<'a> Panel<'a> {
         let mut terminal = Terminal::new(backend).unwrap();
         terminal.clear().unwrap();
 
+
         Panel {
             command_sender,
             message_receiver,
@@ -114,6 +115,13 @@ impl<'a> Panel<'a> {
     }
 
     pub fn tick(& mut self) -> Result<(), ()> {
+
+        //If no participant is selected, try and select one
+        if !self.participant_names.is_empty() && self.selected_participant == Option::None {
+            self.selected_participant = Some(self.participant_names.get(0).unwrap().clone());
+            self.participants_state.select(Some(0));
+        }
+
         //When a button is clicked or an action is invoked, we must send the event via the ui_sender
         if let Ok(true) = poll(Duration::from_secs(0)) {
             match read().unwrap() {
@@ -137,6 +145,8 @@ impl<'a> Panel<'a> {
                             //host.display_participant_count();
                             //println!("Stop");
                             self.command_sender.send(HostEvent::KillAll).unwrap();
+                            self.logs.insert(0, LogEntry::new(Severity::Info, NodeType::Host, format!("Terminating all participants.")));
+
                         },
                         crossterm::event::KeyCode::Char('q') => {
                             //host.display_participant_count();
@@ -299,7 +309,6 @@ impl<'a> Panel<'a> {
                 )
                 .split(f.size());
 
-
             let h_chunks = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints(
@@ -310,7 +319,6 @@ impl<'a> Panel<'a> {
                 )
                 .split(v_chunks[0]);
 
-
             let participant_list = List::new(participant_items)
                 .block(Block::default().title("Participants").borders(Borders::ALL))
                 .style(Style::default().fg(Color::White))
@@ -320,11 +328,10 @@ impl<'a> Panel<'a> {
 
             f.render_stateful_widget(participant_list, h_chunks[0], state);
 
-
             let log_table = Table::new(messages_items)
                 .header(
                     Row::new(vec!["Time", "Level", "Target", "Message"])
-                        .style(Style::default().fg(Color::Yellow))
+                        .style(Style::default().fg(Color::Rgb(240, 160, 0)))
                         .bottom_margin(1)
                 )
                 .widths(&[Constraint::Length(19), Constraint::Length(7), Constraint::Length(12), Constraint::Length(500)])
@@ -334,17 +341,12 @@ impl<'a> Panel<'a> {
                 .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
                 .highlight_symbol(">>").style(Style::default().fg(Color::White));
 
-
-
             f.render_widget(log_table, h_chunks[1]);
-
-
 
             let info = Paragraph::new(text.clone())
                 .block(Block::default().title("Info").borders(Borders::ALL))
                 ;
             f.render_widget(info, v_chunks[1]);
-
 
             let shortcuts = Paragraph::new(Text::from(vec![Spans::from(vec![
                 Span::raw("q "),
@@ -359,8 +361,7 @@ impl<'a> Panel<'a> {
                 Span::styled("Kill        ", Style::default().fg(Color::Rgb(100, 0, 0))),
                 Span::raw("c "),
                 Span::styled("Clear Log   ", Style::default().fg(Color::Rgb(100, 0, 0))),
-            ])]))
-                .block(Block::default());
+            ])])).block(Block::default());
 
             f.render_widget(shortcuts, v_chunks[2]);
 

@@ -3,6 +3,7 @@ prime = 	961748942
 
 function generate_data(endpoint_index, endpoint_count)
 
+
 	data = {}
 
 	upper = prime --math.floor(math.sqrt(prime))
@@ -17,8 +18,6 @@ end
 
 function execute_code()
 
-    _print("Completely useless print statement")
-
 	participant_result = {}
 
 	participant_result.lower = global_data.lower
@@ -27,13 +26,11 @@ function execute_code()
 	lower = global_data.lower
 	upper = global_data.upper
 
-	--current = os.clock()
-
 	for i = lower,upper,1
 	do
-        if i % 100000 == 0 then _check() end
+        --if i % 100000 == 0 then _check() end
 
-        --if i % 100000 == 0 then _progress((i - lower) / (upper - lower) * 100, 100) end
+        --if i % 100000 == 0 then _progress((i - lower) / (upper - lower) * 100, 1000) end
 
 		if (prime % i == 0 )
 		then
@@ -50,7 +47,7 @@ function execute_code()
 end
 
 function interpret_results()
-    print("Testing")
+
 	for i,v in pairs(results)
 	do
 	    if (v.divisor ~= 0)

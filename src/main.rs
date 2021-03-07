@@ -17,6 +17,7 @@ use crate::host::Host;
 
 use crate::messages::{HostEvent, UiEvents};
 use crossbeam_channel::unbounded;
+use message_io::network::{Network, Transport, NetEvent};
 
 fn main() {
 
@@ -124,26 +125,46 @@ fn main() {
 
             let participant_name = participant_matches.unwrap().value_of("participant name").unwrap();
 
-            crossbeam::thread::scope(|s| {
-                let participant_name = participant_name;
-                let ip_address = ip_address;
+            loop
+            {
+                println!("Searching for host");
 
-                for i in 0..thread_count {
-                    s.builder()
-                        .name(format!("thread_{}-{}", &participant_name, i))
-                        .spawn(move |_| {
-                            let mut participant = participant::Participant::new(
-                                if thread_count == 1 {
-                                    format!("{}", participant_name)
-                                } else {
-                                    format!("{}-{}", participant_name, i)
-                                }, ip_address);
+                {
+                    let mut network = Network::new(move |net_event: NetEvent<()>| {});
 
-                            while let Ok(_) = participant.tick() {}
-                        }).unwrap();
+
+                    while let Err(_) = network.connect(Transport::Tcp, ip_address) {
+
+                    }
+
                 }
-            }).unwrap();
 
+                println!("Found host!");
+
+                crossbeam::thread::scope(|s| {
+                    let participant_name = participant_name;
+                    let ip_address = ip_address;
+
+                    for i in 0..thread_count {
+                        s.builder()
+                            .name(format!("thread_{}-{}", &participant_name, i))
+                            .spawn(move |_| {
+                                let mut participant = participant::Participant::new(
+                                    if thread_count == 1 {
+                                        format!("{}", participant_name)
+                                    } else {
+                                        format!("{}-{}", participant_name, i)
+                                    }, ip_address).unwrap();
+
+                                while let Ok(_) = participant.tick() {}
+                            }).unwrap();
+                    }
+                }).unwrap();
+
+                println!("Finished.");
+
+
+            }
 
         },
         _ => unreachable!()

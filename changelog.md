@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Use slices to scroll
   - Add Pageup Pagedown shortcuts to shortcut bar
 - Come up with a color scheme that's not disgusting
-- Find a better way to kill participants than just panicking
+  - Look up color schemes and palettes
 
 ### Unfinished Ideas
 - Can we use `AnyLuaValue` type to store tables?
@@ -26,6 +26,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - See if rlua supports tables of tables, if it does migrate to rlua.
 - Do we need to send the name AND endpoint with UI messages?
 - Should the `Panel::participants` bimap use the name or the endpoint as the left key?
+
+## [0.2.14] - 2021-03-04
+### Added
+- First participant is automatically selected when first available
+- Renamed stop to kill
+- Kill command now adds entry to log
+- Kill works by calling `std::process::exit` instead of panicking
+- Before `Participant` struct connects, we check to make sure a host is available. we do this by creating a temporary client to connect to host.
+- When a device disconnects, we make sure it has registered before we try and remove it.
+- Participant will now sit and wait until the host is available
 
 ## [0.2.13] - 2021-03-03
 ### Added
