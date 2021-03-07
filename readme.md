@@ -5,7 +5,7 @@ By running Midas on a host device then assigning participants we can create a di
 participant are passed using [message-io](https://docs.rs/message-io/0.8.1/message_io/) and code is executed using [hlua](https://docs.rs/hlua/0.4.1/hlua/).
 These two combined allow the host to send code to participants for them to execute. 
 
-![Screenshot](https://imgur.com/AI14BqC)
+![Screenshot](https://i.imgur.com/h5LnB3d.png)
 
 ## Why?
 

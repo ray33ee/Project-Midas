@@ -10,9 +10,9 @@ use crossterm::event::{read, Event, poll};
 use std::io;
 use tui::Terminal;
 use tui::backend::CrosstermBackend;
-use tui::widgets::{Block, Borders, ListItem, List, Row, Table, Cell, ListState, Paragraph, TableState};
+use tui::widgets::{Block, Borders, ListItem, List, Row, Table, Cell, ListState, Paragraph};
 use tui::layout::{Layout, Constraint, Direction};
-use tui::style::{Modifier, Color, Style};
+use tui::style::{Color, Style};
 use tui::text::{Spans, Span};
 
 
@@ -266,9 +266,6 @@ impl<'a> Panel<'a> {
                         self.participants.get_by_left(string).unwrap().status.to_color()
                     )))
             .collect();
-
-
-        let highlighted_item = self.participants_state.selected().clone();
 
         let state = & mut self.participants_state;
         //let state = & mut self.participants_state;

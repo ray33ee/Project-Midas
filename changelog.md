@@ -8,7 +8,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - When dealing with tables returned by Lua, make sure none of th key-data pairs are `LuaOther` as these will not be converted correctly. Warn user that tables within tables are not yet supported.
 - Make sure things work correctly when events are caught during `_check` execution (for example when the execute button is pressed during an execution)
   - Prevent user from executing while threads are still calculating
-- Add picture (or a gif of it executing and pausing) of Host tui to readme
 - Allow user to choose script at runtime
 - Upgrade to messages-io `0.10.0`
 - Make sure that if `generate_data` fails, then execution stops correctly. 
@@ -19,6 +18,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Experiment with the `LuaArray` option to see if we can use this as a table
 - See if rlua supports tables of tables, if it does migrate to rlua.
 - Use the Gague widget to show progress
+
+## [0.2.17] - 2021-03-07
+
+### Added
+- Correct image used in readme
 
 ## [0.2.16] - 2021-03-07
 
