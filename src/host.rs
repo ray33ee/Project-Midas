@@ -6,13 +6,14 @@ use bimap::BiMap;
 
 use message_io::network::{Network, NetEvent, Transport};
 
-use hlua::{Lua, AnyLuaValue, LuaTable};
+use hlua::{Lua, AnyLuaValue, LuaTable, LuaFunctionCallError};
 use std::io::Read;
 
 use crate::lua::SerdeLuaTable;
 
 use crate::messages::HostEvent;
 use crossbeam_channel::{Receiver, Sender};
+
 
 pub struct Host<'a> {
     participants: BiMap<String, Endpoint>,
@@ -22,11 +23,11 @@ pub struct Host<'a> {
     //ui_sender: Option<EventSender<UiEvents>>,
 
     command_receiver: Receiver<HostEvent>,
-    command_sender: Sender<HostEvent>,
     message_sender: Sender<UiEvents>,
 
     participants_finished: usize,
     participants_startedwith: BiMap<String, Endpoint>,
+
 
     lua: Lua<'a>
 }
@@ -51,11 +52,9 @@ impl<'a> Host<'a> {
             Err(e) => return Err(format!("Can not listen at {} - {}", server_address, e))
         };
 
-
         Ok(Host {
             participants: BiMap::new(),
             command_receiver,
-            command_sender: command_sender.clone(),
             network,
             participants_finished: 0,
             participants_startedwith: BiMap::new(),
@@ -64,38 +63,133 @@ impl<'a> Host<'a> {
         })
     }
 
+    fn send_data(& mut self) -> Result<(), String> {
+        //Extract the 'generate data' function from the Lua script.
+        let generate_data_option: Option<hlua::LuaFunction<_>> = self.lua.get("generate_data");
+
+        match generate_data_option {
+            Some(mut generate_data) => {
+                let endpoint_count = self.participants.len();
+
+
+                //Call generate_data function for each endpoint, and send the resultant data
+                for (i, (_name, endpoint)) in self.participants.iter().enumerate() {
+                    let result_option: Result<LuaTable<_>, _> = generate_data.call_with_args((i as i32, endpoint_count as i32));
+
+                    match result_option {
+                        Ok(mut result) => {
+                            let list: SerdeLuaTable = result.iter::<AnyLuaValue, AnyLuaValue>().map(|pair| pair.unwrap()).collect();
+
+
+                            self.network.send(*endpoint, Message::VectorHTP(list));
+                        }
+                        Err(e) => {
+
+
+                            return match e {
+                                LuaFunctionCallError::LuaError(e) => {
+                                    Err(format!("Error in `generate_data` function - {}", e))
+                                }
+                                LuaFunctionCallError::PushError(e) => {
+                                    Err(format!("Error in `generate_data` function - PushError: {:?}", e))
+                                }
+                            }
+
+                        }
+                    }
+
+
+                }
+
+                Ok(())
+            }
+            None => {
+                Err(format!("`generate_data` function does not exist in script."))
+            }
+        }
+
+
+    }
+
+    fn send_code(& mut self, code: String) {
+        for (_name, endpoint) in self.participants.iter() {
+            self.network.send(*endpoint, Message::Code(code.clone()));
+        }
+    }
+
+    fn execute(& mut self) {
+        for (_, endpoint) in self.participants.iter() {
+            self.network.send(*endpoint, Message::Execute);
+        }
+    }
+
     pub fn start_participants(& mut self, path: &str) {
 
-        self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Starting calculations."), Severity::Starting)).unwrap();
 
         use std::fs::File;
 
-        let mut fh = File::open(path).unwrap();
+        match File::open(path) {
+            Ok(mut fh) => {
 
-        let mut source_code = String::new();
 
-        fh.read_to_string(& mut source_code).unwrap();
+                let mut source_code = String::new();
 
-        let message_sender = self.message_sender.clone();
+                match fh.read_to_string(&mut source_code) {
+                    Ok(_) => {
+                        let message_sender = self.message_sender.clone();
 
-        self.lua.set("_print", hlua::function1(move |message: String| {
-            message_sender.send(UiEvents::Log(NodeType::Host, message, Severity::Stdout)).unwrap();
-        }));
+                        self.lua.set("_print", hlua::function1(move |message: String| {
+                            message_sender.send(UiEvents::Log(NodeType::Host, message, Severity::Stdout)).unwrap();
+                        }));
 
-        match self.lua.execute::<()>(source_code.as_str()) {
-            Ok(_) => {}
-            Err(e) => { panic!("DEPRECIATED LuaError: {:?}", e); }
+                        match self.lua.execute::<()>(source_code.as_str()) {
+                            Ok(_) => {
+
+                                self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Starting calculations on {} participants.", self.participants.len()), Severity::Starting)).unwrap();
+
+                                self.participants_finished = 0;
+
+                                self.participants_startedwith = self.participants.clone();
+
+                                match self.send_data() {
+                                    Ok(_) => {
+
+
+                                        self.send_code(source_code);
+
+                                        self.execute();
+                                    }
+                                    Err(e) => {
+                                        self.message_sender.send(UiEvents::Log(NodeType::Host, e, Severity::Error)).unwrap();
+
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Bad Lua script - {}", e), Severity::Error)).unwrap();
+
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Error parsing script - {}", e), Severity::Error)).unwrap();
+
+                    }
+                }
+
+
+
+
+            }
+            Err(e) => {
+                self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Error opening script - {}", e), Severity::Error)).unwrap();
+
+            }
         }
 
-        self.participants_finished = 0;
 
-        self.participants_startedwith = self.participants.clone();
 
-        self.command_sender.send(HostEvent::SendData).unwrap();
 
-        self.command_sender.send(HostEvent::SendCode(source_code)).unwrap();
-
-        self.command_sender.send(HostEvent::Execute).unwrap();
     }
 
     pub fn check_events(& mut self) {
@@ -162,14 +256,31 @@ impl<'a> Host<'a> {
                                     // Test to see if all participants have finished
                                     if self.participants.len() == self.participants_finished {
 
+                                        let interpret_results_option: Option<hlua::LuaFunction<_>> = self.lua.get("interpret_results");
 
-                                        // Execute 'interpret_results' function
-                                        let mut interpret_results: hlua::LuaFunction<_> = self.lua.get("interpret_results").unwrap();
+                                        match interpret_results_option {
+                                            Some(mut interpret_results) => {
+                                                // Get return value
+                                                match interpret_results.call::<String>() {
+                                                    Ok(return_code) => {
 
-                                        // Get return value
-                                        let return_code: String = interpret_results.call().unwrap();
+                                                        self.message_sender.send(UiEvents::InterpretResultsReturn(return_code)).unwrap();
+                                                    }
+                                                    Err(e) => {
+                                                        self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Error in `interpret_results` function - {}", e), Severity::Error)).unwrap();
 
-                                        self.message_sender.send(UiEvents::InterpretResultsReturn(return_code)).unwrap();
+                                                    }
+                                                }
+
+                                            }
+                                            None => {
+
+                                                self.message_sender.send(UiEvents::Log(NodeType::Host, format!("`interpret_results` function does not exist in script."), Severity::Error)).unwrap();
+                                            }
+                                        }
+
+
+
 
                                     }
                                 }
@@ -213,12 +324,12 @@ impl<'a> Host<'a> {
                         }
                     }
                     NetEvent::AddedEndpoint(_endpoint) => {
-                        //Client has connected to the host, but at this stage has not yet registered
-                        //self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Client added: {}", endpoint), Severity::Info)).unwrap();
+                        //Participant has connected to the host, but at this stage has not yet registered
+                        //self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Participant added: {}", endpoint), Severity::Info)).unwrap();
 
                     },
                     NetEvent::RemovedEndpoint(endpoint) => {
-                        //Client disconnected without unregistering
+                        //Participant disconnected without unregistering
                         match self.participants.get_by_right(&endpoint)
                         {
                             Some(endpoint_name) => {
@@ -236,31 +347,6 @@ impl<'a> Host<'a> {
                     }
                     NetEvent::DeserializationError(_) => (),
                 },
-                HostEvent::SendCode(code) => {
-                    self.message_sender.send(UiEvents::Log(NodeType::Host, format!("Executing on {} participant(s)", self.participants.len()), Severity::Info)).unwrap();
-
-                    for (_name, endpoint) in self.participants.iter() {
-                        self.network.send(*endpoint, Message::Code(code.clone()));
-                    }
-                },
-                HostEvent::SendData => {
-
-                    //Extract the 'generate data' function from the Lua script.
-                    let mut generate_data: hlua::LuaFunction<_> = self.lua.get("generate_data").unwrap();
-
-                    let endpoint_count = self.participants.len();
-
-
-                    //Call generate_data function for each endpoint, and send the resultant data
-                    for (i, (_name, endpoint)) in self.participants.iter().enumerate() {
-                        let mut result: LuaTable<_> = generate_data.call_with_args((i as i32, endpoint_count as i32)).unwrap();
-
-                        let list: SerdeLuaTable = result.iter::<AnyLuaValue, AnyLuaValue>().map(|pair| pair.unwrap()).collect();
-
-
-                        self.network.send(*endpoint, Message::VectorHTP(list));
-                    }
-                },
                 HostEvent::Pause(endpoint) => {
                     self.network.send(endpoint, Message::Pause);
 
@@ -271,11 +357,6 @@ impl<'a> Host<'a> {
                 },
                 HostEvent::Kill(endpoint) => {
                     self.network.send(endpoint, Message::Kill);
-                },
-                HostEvent::Execute => {
-                    for (_, endpoint) in self.participants.iter() {
-                        self.network.send(*endpoint, Message::Execute);
-                        }
                 },
                 HostEvent::Begin(path) => {
                     self.start_participants(path.as_str());

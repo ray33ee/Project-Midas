@@ -6,18 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 ### To Do
 - When dealing with tables returned by Lua, make sure none of th key-data pairs are `LuaOther` as these will not be converted correctly. Warn user that tables within tables are not yet supported.
-- Make sure things work correctly when events are caught during `_check` execution (for example when the execute button is pressed during an execution)
-  - Prevent user from executing while threads are still calculating
-- Allow user to choose script at runtime
 - Upgrade to messages-io `0.10.0`
-- Make sure that if `generate_data` fails, then execution stops correctly. 
-- Redirect `stderr` to a log file, but only in host mode
 
 ### Unfinished Ideas
 - Can we use `AnyLuaValue` type to store tables?
   - Experiment with the `LuaArray` option to see if we can use this as a table
 - See if rlua supports tables of tables, if it does migrate to rlua.
-- Use the Gague widget to show progress
+- Use the Gague widget to show progress?
+- Can we selectively pick the parts of the dependencies we need instead of loading all of it?
+- Think of a good way to select scripts while running?
+  - At the moment the user can just modify the script (thge one chosen when the application started) since executing will load the modified scriptc
+
+## [0.2.18] - 2021-03-07
+
+### Added
+- We now make sure the participants are idle before we start execution
+- Error handling for script loading error and bad script
+- Error handling for various types of script-based errors
+
+### Fixed
+- Word 'client' changed to 'participant' for clarity and uniformity
+- Selecting up or down key with no participants no longer causes a panic
+- Now if Lua script functions fail, or throw an error we handle the error and add an entry to the log
+
+### Changed
+- SendCode, Execute and SendData commands removed in favour of direct functions that return `Result`
 
 ## [0.2.17] - 2021-03-07
 

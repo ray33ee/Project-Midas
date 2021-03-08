@@ -119,6 +119,16 @@ impl<'a> Panel<'a> {
         }
     }
 
+    fn is_calculating(& self) -> bool {
+        let mut is_calculating = false;
+
+        for info in self.participants.right_values().into_iter() {
+            is_calculating |= info.status != ParticipantStatus::Idle;
+        }
+
+        is_calculating
+    }
+
     pub fn tick(& mut self) -> Result<(), ()> {
 
         //If no participant is selected, try and select one
@@ -133,7 +143,12 @@ impl<'a> Panel<'a> {
                 Event::Key(key_event) => {
                     match key_event.code {
                         crossterm::event::KeyCode::Char('e') => {
-                            self.command_sender.send(HostEvent::Begin(String::from(self.script_path))).unwrap();
+
+                            if !self.is_calculating() {
+                                self.command_sender.send(HostEvent::Begin(String::from(self.script_path))).unwrap();
+
+                            }
+
                         },
                         crossterm::event::KeyCode::Char('p') => {
                             self.command_sender.send(HostEvent::PauseAll).unwrap();
@@ -165,9 +180,11 @@ impl<'a> Panel<'a> {
 
                         },
                         crossterm::event::KeyCode::Up => {
-                            let selected_index = self.participants_state.selected().unwrap();
 
                             if !self.participants.is_empty() {
+
+                                let selected_index = self.participants_state.selected().unwrap();
+
                                 if selected_index != 0 {
                                     self.participants_state.select(Some(selected_index - 1));
                                 } else {
@@ -176,8 +193,9 @@ impl<'a> Panel<'a> {
                             }
                         },
                         crossterm::event::KeyCode::Down => {
-                            let selected_index = self.participants_state.selected().unwrap();
                             if !self.participants.is_empty() {
+                                let selected_index = self.participants_state.selected().unwrap();
+
                                 self.participants_state.select(Some(selected_index + 1));
                             }
                         },
@@ -234,7 +252,7 @@ impl<'a> Panel<'a> {
                 },
                 UiEvents::ParticipantUnregistered( name) => {
 
-                    self.logs.insert(0, LogEntry::new(Severity::Warning, NodeType::Participant(name.clone()), format!("Client has disconnected.")));
+                    self.logs.insert(0, LogEntry::new(Severity::Warning, NodeType::Participant(name.clone()), format!("Participant has disconnected.")));
                     self.participants.remove_by_left(&name);
                 },
                 UiEvents::InterpretResultsReturn(return_message) => {

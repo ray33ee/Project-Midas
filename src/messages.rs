@@ -112,12 +112,9 @@ pub enum UiEvents {
 
 pub enum HostEvent {
     Network(NetEvent<Message>),
-    SendCode(String),
-    SendData,
     Pause(Endpoint),
     Play(Endpoint),
     Kill(Endpoint),
-    Execute,
 
     Begin(String),
 

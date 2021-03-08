@@ -90,6 +90,7 @@ fn main() {
 
     match app_matches.subcommand() {
         ("host", host_matches) => {
+
             match Host::new(command_receiver, command_sender.clone(), message_sender,ip_address) {
                 Ok(mut host) => {
                     let script_path = host_matches.unwrap().value_of("Lua script").unwrap();
