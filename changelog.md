@@ -17,6 +17,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Think of a good way to select scripts while running?
   - At the moment the user can just modify the script (thge one chosen when the application started) since executing will load the modified scriptc
 
+### Changed
+- Replaced nightly code with crate `num_cpus`
+
 ## [0.2.18] - 2021-03-07
 
 ### Added
