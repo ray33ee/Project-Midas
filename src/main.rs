@@ -1,5 +1,3 @@
-#![feature(available_concurrency)]
-
 mod host;
 mod participant;
 mod messages;
@@ -121,7 +119,7 @@ fn main() {
                 number.parse::<usize>().unwrap()
             }
             else {
-                thread::available_concurrency().unwrap().get()
+                num_cpus::get()
             };
 
             let participant_name = participant_matches.unwrap().value_of("participant name").unwrap();

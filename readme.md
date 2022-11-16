@@ -89,12 +89,10 @@ This functions returns a string, which can be used to show a message indicating 
 To build, simply download and unzip the [repo](https://github.com/ray33ee/Project-Midas/archive/master.zip), navigate to the unzipped repo and execute the following command
 
 ```shell
-cargo +nightly build --release
+cargo build --release
 ```
 
 Then navigate to the `target/release` folder and execute `midas` with the command options as stated above
-
-We also use the [available_concurrency](https://doc.rust-lang.org/std/thread/fn.available_concurrency.html) function which is currently nightly only.
 
 ## Native binaries
 
